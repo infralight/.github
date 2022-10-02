@@ -1,0 +1,103 @@
+name: Reusable Golang Build ECR Image
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      custom:
+        type: boolean
+        required: false
+        default: false
+      run-tests:
+        type: boolean
+        required: false
+        default: false
+      custom-tests:
+        type: boolean
+        required: false
+        default: false
+      cmd-tests:
+        type: string
+        required: false
+        default: "go test ./..."
+      image-name:
+        type: string
+        required: true
+      image-tag:
+        type: string
+        required: true
+      dockerfile-path:
+        type: string
+        required: false
+        default: 'Dockerfile'
+      aws-region:
+        type: string
+        required: true
+      latest:
+        type: boolean
+        required: false
+        default: false
+      run:
+        required: false
+        type: string
+    secrets:
+      GLOBAL_PAT:
+        required: false
+      ECR_AWS_ACCESS_KEY_ID:
+        required: true
+      ECR_AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  tests:
+    name: "Run Golang Tests"
+    if: inputs.run-tests == true
+    uses: ./.github/workflows/golang-tests.yaml
+    with:
+      go-version: ${{ inputs.go-version }}
+      custom: ${{ inputs.custom-tests }}
+      run: ${{ inputs.cmd-tests }}
+    secrets:
+      GLOBAL_PAT: ${{ secrets.GLOBAL_PAT }}
+  build-push-ecr:
+    name: "Build & Push ECR Docker Image "
+    runs-on: 'ubuntu-latest'
+    env:
+      HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
+      HAVE_RUN_CMD: ${{ inputs.run != '' }}
+    needs:
+      - tests
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Set up Go"
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
+      - name: "[Build] configure git for private modules"
+        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: "[Build]: configure AWS credentials"
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ inputs.aws-region }}
+      - name: "Build: Amazon ECR \"Login\""
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr-stage
+      - name: "[Build]: build image & upload to ECR stage"
+        if: ${{ env.HAVE_RUN_CMD == 'false' }}
+        run: | 
+          docker buildx build . --file ${{ inputs.dockerfile-path }} --tag ${{ inputs.image-name }}:${{ inputs.image-tag }}
+          docker push ${{ inputs.image-name }}:${{ inputs.image-tag }}
+      - name: "[Build]: build image & upload to ECR stage latest tag"
+        if: ${{ env.HAVE_RUN_CMD == 'false' }}
+        run: |
+          docker tag ${{ inputs.image-name }}:${{ inputs.image-tag }} ${{ inputs.image-name }}:latest
+          docker push ${{ inputs.image-name }}:latest
+      - name: "[Build]: build image & upload to ECR stage - CUSTOM"
+        if: ${{ env.HAVE_RUN_CMD == 'true' }}
+        run: ${{ inputs.run }}

@@ -1,0 +1,56 @@
+name: Reusable Golang Tests
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      custom:
+        type: boolean
+        required: false
+        default: false
+      run:
+        default: 'go test ./...'
+        required: false
+        type: string
+    secrets:
+      GLOBAL_PAT:
+        required: false
+
+jobs:
+  basic-tests:
+    if: inputs.custom == false
+    name: Run Basic Tests
+    env:
+      HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure git for private modules
+        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ inputs.go-version }}
+      - name: Test
+        run: |
+          go version
+          go vet ./...
+          go test -v ./...
+  custom-tests:
+    if: inputs.custom == true
+    name: Run Custom Tests
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure git for private modules
+        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
+      - run: ${{ inputs.run }}
