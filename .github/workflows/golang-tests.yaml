@@ -12,7 +12,7 @@ on:
         required: false
         default: false
       run:
-        default: 'go test ./...'
+        default: 'go test -v ./...'
         required: false
         type: string
     secrets:
