@@ -62,3 +62,20 @@ jobs:
       run: ${{ inputs.cmd-tests }}
     secrets:
       GLOBAL_PAT: ${{ secrets.GLOBAL_PAT }}
+  build-push-ecr:
+    name: "Build & Push ECR Docker Image "
+    runs-on: 'ubuntu-latest'
+    env:
+      HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
+      HAVE_RUN_CMD: ${{ inputs.run != '' }}
+    needs:
+      - tests
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Set up Go"
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
+      - name: "[Build] configure git for private modules"
+        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
