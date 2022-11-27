@@ -1,0 +1,64 @@
+name: Reusable Golang Build ECR Image
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      custom:
+        type: boolean
+        required: false
+        default: false
+      run-tests:
+        type: boolean
+        required: false
+        default: false
+      custom-tests:
+        type: boolean
+        required: false
+        default: false
+      cmd-tests:
+        type: string
+        required: false
+        default: "go test ./..."
+      image-name:
+        type: string
+        required: true
+      image-tag:
+        type: string
+        required: true
+      dockerfile-path:
+        type: string
+        required: false
+        default: 'Dockerfile'
+      aws-region:
+        type: string
+        required: true
+      latest:
+        type: boolean
+        required: false
+        default: false
+      run:
+        required: false
+        type: string
+    secrets:
+      GLOBAL_PAT:
+        required: false
+      ECR_AWS_ACCESS_KEY_ID:
+        required: true
+      ECR_AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  tests:
+    name: "Run Golang Tests"
+    if: inputs.run-tests == true
+    uses: ./.github/workflows/golang-tests.yaml
+    with:
+      go-version: ${{ inputs.go-version }}
+      custom: ${{ inputs.custom-tests }}
+      run: ${{ inputs.cmd-tests }}
+    secrets:
+      GLOBAL_PAT: ${{ secrets.GLOBAL_PAT }}
