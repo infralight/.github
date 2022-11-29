@@ -25,17 +25,18 @@ on:
         default: "go test ./..."
       app-name:
         type: string
-        required: true        
+        required: true
       image-name:
         type: string
         required: true
+        
       image-tag:
         type: string
         required: false
-      envs:
-        type: string
-        default: '1'
-        required: false        
+      prod:
+        type: boolean
+        default: false
+        required: false
       dockerfile-path:
         type: string
         required: false
@@ -66,6 +67,10 @@ on:
         required: true
       PROD_AWS_REGION:
         required: true
+      STAG_ACCOUNT_ID:
+        required: true
+      PROD_ACCOUNT_ID:
+        required: true
 
 jobs:
   tests:
@@ -93,3 +98,44 @@ jobs:
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: "Build"
+        if: ${{ env.HAVE_RUN_CMD == 'false' }}
+        run: | 
+          docker buildx build . --file ${{ inputs.dockerfile-path }} --tag tempimage
+          docker tag tmpimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
+          docker tag tmpimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
+          docker tag tmpimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+          docker tag tmpimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+      - name: "[stag] configure aws credentials"
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.STAG_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.STAG_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.STAG_AWS_REGION }}
+      - name: "[stag] login ecr"
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr-stag         
+      - name: "Upload ECR STAG"
+        if: (env.HAVE_RUN_CMD == 'false')
+        run: |
+          docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+          if ${inputs.latest} ; then docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
+      - name: "[prod] configure aws credentials"
+        if: (inputs.prod)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.PROD_AWS_REGION }}
+      - name: "[prod] login ecr"
+        if: (inputs.prod)      
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr-prod             
+      - name: "Upload ECR PROD"
+        if: (env.HAVE_RUN_CMD == 'false' && inputs.prod)
+        run: |
+          docker push ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+          if ${inputs.latest} ; then docker push ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi     
+      - name: "[Build]: build image & upload to ECR stage - CUSTOM"
+        if: ${{ env.HAVE_RUN_CMD == 'true' }}
+        run: ${{ inputs.run }}        
