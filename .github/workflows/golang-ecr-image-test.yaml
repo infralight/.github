@@ -128,7 +128,7 @@ jobs:
       - name: "[stag] login ecr"
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr-stag         
-      - name: "Upload ECR STAG"
+      - name: "[stag] upload image"
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
           docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
@@ -144,7 +144,7 @@ jobs:
         if: (inputs.prod)      
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr-prod             
-      - name: "Upload ECR PROD"
+      - name: "[prod] upload image"
         if: (env.HAVE_RUN_CMD == 'false' && inputs.prod)
         run: |
           docker push ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
