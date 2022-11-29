@@ -33,7 +33,12 @@ on:
       image-name:
         type: string
         required: true
-
+      branch:
+        type: string
+        required: true
+      event_name:
+        type: string
+        required: true
       image-tag:
         type: string
         required: false
