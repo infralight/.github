@@ -68,8 +68,6 @@ jobs:
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
-    needs:
-      - tests
     steps:
       - uses: actions/checkout@v2
       - name: "Set up Go"
