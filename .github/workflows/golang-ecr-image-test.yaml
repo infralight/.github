@@ -23,12 +23,19 @@ on:
         type: string
         required: false
         default: "go test ./..."
+      app-name:
+        type: string
+        required: true        
       image-name:
         type: string
         required: true
       image-tag:
         type: string
         required: false
+      envs:
+        type: string
+        default: '1'
+        required: false        
       dockerfile-path:
         type: string
         required: false
