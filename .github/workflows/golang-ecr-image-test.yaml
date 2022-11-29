@@ -50,9 +50,21 @@ on:
     secrets:
       GLOBAL_PAT:
         required: false
-      ECR_AWS_ACCESS_KEY_ID:
+      STAG_AWS_ACCESS_KEY_ID:
         required: true
-      ECR_AWS_SECRET_ACCESS_KEY:
+      PROD_AWS_ACCESS_KEY_ID:
+        required: true
+      STAG_AWS_SECRET_ACCESS_KEY:
+        required: true
+      PROD_AWS_SECRET_ACCESS_KEY:
+        required: true
+      STAG_ARGOCD_TOKEN:
+        required: true
+      PROD_ARGOCD_TOKEN:
+        required: true
+      STAG_AWS_REGION:
+        required: true
+      PROD_AWS_REGION:
         required: true
 
 jobs:
