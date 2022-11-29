@@ -40,9 +40,6 @@ on:
         type: string
         required: false
         default: 'Dockerfile'
-      aws-region:
-        type: string
-        required: true
       latest:
         type: boolean
         required: false
