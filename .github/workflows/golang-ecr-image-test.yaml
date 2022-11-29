@@ -15,6 +15,10 @@ on:
         type: boolean
         required: false
         default: false
+      trivy-scan:
+        type: boolean
+        required: false
+        default: false        
       custom-tests:
         type: boolean
         required: false
@@ -106,6 +110,15 @@ jobs:
           docker tag tmpimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
           docker tag tmpimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
           docker tag tmpimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+      - name: "Run Trivy vulnerability scanner"
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: tempimage
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'          
       - name: "[stag] configure aws credentials"
         uses: aws-actions/configure-aws-credentials@v1
         with:
