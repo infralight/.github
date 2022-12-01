@@ -61,25 +61,25 @@ on:
       GLOBAL_PAT:
         required: false
       STAG_AWS_ACCESS_KEY_ID:
-        required: false
+        required: true
       PROD_AWS_ACCESS_KEY_ID:
-        required: false
+        required: true
       STAG_AWS_SECRET_ACCESS_KEY:
-        required: false
+        required: true
       PROD_AWS_SECRET_ACCESS_KEY:
-        required: false
+        required: true
       STAG_ARGOCD_TOKEN:
-        required: false
+        required: true
       PROD_ARGOCD_TOKEN:
-        required: false
+        required: true
       STAG_AWS_REGION:
-        required: false
+        required: true
       PROD_AWS_REGION:
-        required: false
+        required: true
       STAG_ACCOUNT_ID:
-        required: false
+        required: true
       PROD_ACCOUNT_ID:
-        required: false
+        required: true
 
 jobs:
   tests:
