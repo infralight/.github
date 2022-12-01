@@ -57,6 +57,29 @@ on:
       run:
         required: false
         type: string
+    secrets:
+      GLOBAL_PAT:
+        required: false
+      STAG_AWS_ACCESS_KEY_ID:
+        required: true
+      PROD_AWS_ACCESS_KEY_ID:
+        required: true
+      STAG_AWS_SECRET_ACCESS_KEY:
+        required: true
+      PROD_AWS_SECRET_ACCESS_KEY:
+        required: true
+      STAG_ARGOCD_TOKEN:
+        required: true
+      PROD_ARGOCD_TOKEN:
+        required: true
+      STAG_AWS_REGION:
+        required: true
+      PROD_AWS_REGION:
+        required: true
+      STAG_ACCOUNT_ID:
+        required: true
+      PROD_ACCOUNT_ID:
+        required: true
 
 jobs:
   tests:
