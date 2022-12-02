@@ -58,10 +58,10 @@ on:
         required: false
         type: string
     secrets:
+      GLOBAL_PAT_USER:
+        required: true
       GLOBAL_PAT:
         required: true
-      GLOBAL_PAT_USER:
-        required: true        
       STAG_AWS_ACCESS_KEY_ID:
         required: true
       PROD_AWS_ACCESS_KEY_ID:
