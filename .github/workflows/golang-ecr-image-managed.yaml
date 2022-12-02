@@ -139,7 +139,8 @@ jobs:
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
           docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
-          if ${inputs.latest} ; then docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
+          echo ${inputs.latest}
+          if ${inputs.latest}; then docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
       - name: "[prod] configure aws credentials"
         if: (inputs.prod)
         uses: aws-actions/configure-aws-credentials@v1
