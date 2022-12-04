@@ -58,10 +58,8 @@ on:
         required: false
         type: string
     secrets:
-      GLOBAL_PAT_USER:
-        required: true
       GLOBAL_PAT:
-        required: true
+        required: false
       STAG_AWS_ACCESS_KEY_ID:
         required: true
       PROD_AWS_ACCESS_KEY_ID:
@@ -112,11 +110,11 @@ jobs:
       - name: "Build"
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
-          docker buildx build . --file ${{ inputs.dockerfile-path }} --build-arg ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USER }} --build-arg ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} --tag docker.io/library/tempimage
-          docker tag docker.io/library/tempimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
-          docker tag docker.io/library/tempimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
-          docker tag docker.io/library/tempimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
-          docker tag docker.io/library/tempimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+          docker buildx build . --file ${{ inputs.dockerfile-path }} --tag tempimage
+          docker tag tmpimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
+          docker tag tmpimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
+          docker tag tmpimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+          docker tag tmpimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
         uses: aquasecurity/trivy-action@master
         with:
@@ -139,7 +137,7 @@ jobs:
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
           docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
-          if ${{inputs.latest}}; then docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
+          if ${inputs.latest} ; then docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
       - name: "[prod] configure aws credentials"
         if: (inputs.prod)
         uses: aws-actions/configure-aws-credentials@v1
@@ -155,7 +153,7 @@ jobs:
         if: (env.HAVE_RUN_CMD == 'false' && inputs.prod)
         run: |
           docker push ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
-          if ${{inputs.latest}} ; then docker push ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
+          if ${inputs.latest} ; then docker push ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
       - name: "[Build]: build image & upload to ECR stage - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
