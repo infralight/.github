@@ -116,7 +116,7 @@ jobs:
       - name: "Build"
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
-          make ${{ inputs.make-build }} GIT_HASH=${GITHUB_SHA::6} VERSION=${{ steps.tags.outputs.tag }} ACCESS_TOKEN_USR=eran-infralight ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
+          make ${{ inputs.make-build }} ACCESS_TOKEN_USR=eran-infralight ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
           docker tag docker.io/library/tempimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
