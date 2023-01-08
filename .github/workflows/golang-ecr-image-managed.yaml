@@ -49,7 +49,7 @@ on:
       dockerfile-path:
         type: string
         required: false
-        default: 'Dockerfile'
+        default: '/'
       latest:
         type: boolean
         required: false
@@ -112,7 +112,8 @@ jobs:
       - name: "Build"
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
-          docker buildx build . --file ${{ inputs.dockerfile-path }} --build-arg ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USER }} --build-arg ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} --tag docker.io/library/tempimage
+          cd ${{ inputs.dockerfile-path }}
+          docker buildx build . --file ${{ inputs.dockerfile-path }}/Dockerfile --build-arg ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USER }} --build-arg ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} --tag docker.io/library/tempimage
           docker tag docker.io/library/tempimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
