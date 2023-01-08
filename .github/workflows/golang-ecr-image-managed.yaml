@@ -49,7 +49,7 @@ on:
       make-build:
         type: string
         required: false
-        default: 'docker-build-ci'        
+        default: 'docker-build'        
       dockerfile-path:
         type: string
         required: false
