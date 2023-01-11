@@ -45,7 +45,7 @@ on:
       prod:
         type: boolean
         default: false
-        required: false     
+        required: false
       dockerfile:
         type: string
         required: false
@@ -112,13 +112,13 @@ jobs:
       - name: "Build"
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
-          make docker-build-ci DOCKER_FILE=${{ inputs.dockerfile }} ACCESS_TOKEN_USR=eran-infralight ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
+          make docker-build-ci DOCKER_FILE=${{ inputs.dockerfile }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USER }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
           docker tag docker.io/library/tempimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
           docker tag docker.io/library/tempimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
-        if: ${{ inputs.trivy-scan == 'true' }}
+        if: ${{ inputs.trivy-scan == "true" }}
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: docker.io/library/tempimage
