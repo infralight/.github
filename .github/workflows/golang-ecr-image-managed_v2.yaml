@@ -42,9 +42,6 @@ on:
       app-name:
         type: string
         required: true
-      image-name:
-        type: string
-        required: true
       branch:
         type: string
         required: true
