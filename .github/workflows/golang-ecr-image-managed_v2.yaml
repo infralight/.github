@@ -54,7 +54,7 @@ on:
       image-tag:
         type: string
         required: false
-      env:
+      environment:
         type: string
         default: 'dev'
         required: false
@@ -95,6 +95,7 @@ jobs:
     secrets:
       GLOBAL_PAT: ${{ secrets.GLOBAL_PAT }}
   build-push-ecr:
+    environment: ${{ .inputs.environment }}
     name: "Build & Push ECR Docker Image "
     runs-on: 'ubuntu-latest'
     env:
