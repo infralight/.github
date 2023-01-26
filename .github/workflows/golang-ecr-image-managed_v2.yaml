@@ -66,11 +66,6 @@ on:
       run:
         required: false
         type: string
-    secrets:
-      GLOBAL_PAT_USER:
-        required: true
-      GLOBAL_PAT:
-        required: true
 
 jobs:
   tests:
