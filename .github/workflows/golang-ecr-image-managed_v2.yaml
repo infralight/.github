@@ -7,6 +7,18 @@ on:
         default: '1.18.2'
         required: false
         type: string
+      node-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      react-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      python-version:
+        default: '1.18.2'
+        required: false
+        type: string
       custom:
         type: boolean
         required: false
