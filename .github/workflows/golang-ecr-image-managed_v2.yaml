@@ -79,7 +79,7 @@ jobs:
     secrets:
       GLOBAL_PAT: ${{ secrets.GLOBAL_PAT }}
   build-push-ecr:
-    environment: ${{ .inputs.environment }}
+    environment: ${{ inputs.environment }}
     name: "Build & Push ECR Docker Image "
     runs-on: 'ubuntu-latest'
     env:
