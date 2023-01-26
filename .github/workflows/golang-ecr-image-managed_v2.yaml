@@ -98,8 +98,8 @@ jobs:
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
           make docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
-          docker tag docker.io/library/tempimage ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
-          docker tag docker.io/library/tempimage ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+          docker tag docker.io/library/tempimage ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
+          docker tag docker.io/library/tempimage ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
         if: ${{ inputs.trivy-scan == 'true' }}
         uses: aquasecurity/trivy-action@master
