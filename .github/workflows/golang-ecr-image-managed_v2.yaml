@@ -48,17 +48,10 @@ on:
       event_name:
         type: string
         required: true
-      image-tag:
-        type: string
-        required: false
       environment:
         type: string
         default: 'dev'
         required: false
-      dockerfile:
-        type: string
-        required: false
-        default: 'Dockerfile'
       latest:
         type: boolean
         required: false
