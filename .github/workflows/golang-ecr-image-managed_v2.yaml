@@ -97,9 +97,9 @@ jobs:
       - name: "Build"
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
-          make docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USER }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
-          docker tag docker.io/library/tempimage ${{ vars.ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
-          docker tag docker.io/library/tempimage ${{ vars.ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+          make docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
+          docker tag docker.io/library/tempimage ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest
+          docker tag docker.io/library/tempimage ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
         if: ${{ inputs.trivy-scan == 'true' }}
         uses: aquasecurity/trivy-action@master
@@ -115,15 +115,15 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
           aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
-          aws-region: ${{ secrets.CI_REGION }}
+          aws-region: ${{ vars.CI_REGION }}
       - name: "login ecr"
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
       - name: "upload image"
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
-          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
-          if ${{inputs.latest}}; then docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
+          docker push ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
+          if ${{inputs.latest}}; then docker push ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
