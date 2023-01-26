@@ -59,7 +59,11 @@ on:
       run:
         required: false
         type: string
-
+    secrets:
+      GLOBAL_PAT_USERNAME:
+        required: true
+      GLOBAL_PAT:
+        required: true
 jobs:
   tests:
     name: "Run Golang Tests"
