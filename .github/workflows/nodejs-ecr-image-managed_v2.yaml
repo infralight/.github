@@ -123,8 +123,8 @@ jobs:
       - name: "upload image"
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
-          docker push ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
-          if ${{inputs.latest}}; then docker push ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
+          docker push ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
+          if ${{inputs.latest}}; then docker push ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest; fi
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
