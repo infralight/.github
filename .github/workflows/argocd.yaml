@@ -24,9 +24,9 @@ on:
         default: '300'
         required: false
     secrets:
-      GLOBAL_PAT_USERNAME:
+      CI_ARGOCD:
         required: true
-      GLOBAL_PAT:
+      CI_SLACK_WEBHOOK:
         required: true
 jobs:
   argocd:
@@ -37,7 +37,7 @@ jobs:
       - name: "[ArgoCD]: set variables"
         run: |
           echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD }}" >> $GITHUB_ENV
-          echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
+          echo "ARGOCD_SERVER=${{ vars.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
           echo "SLACK_WEBHOOK=${{ secrets.STAG_DEPLOYMENT_SLACK_CHANNEL }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
       - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
@@ -71,4 +71,4 @@ jobs:
           SLACK_MESSAGE: "${{ inputs.app-name }} ArgoCD successfully deployed from ${{ inputs.branch }} to ${{ inputs.environment }}, status: ${{ job.status }}"
           SLACK_TITLE: "**${{ inputs.environment }}**: ${{ inputs.app-name }} ArgoCD deployment notification, status: ${{ job.status }}"
           SLACK_USERNAME: cicdBot
-          SLACK_WEBHOOK: ${{ env.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK: ${{ secrets.CI_SLACK_WEBHOOK }}
