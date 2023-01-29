@@ -1,0 +1,74 @@
+name: Reusable ArgoCD Sync
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        type: string
+        required: true
+      branch:
+        type: string
+        required: true
+      tag:
+        type: string
+        required: true
+      tagKey:
+        type: string
+        required: true
+      environment:
+        type: string
+        default: 'dev'
+        required: false
+      timeout:
+        type: number
+        default: 300
+        required: false
+    secrets:
+      GLOBAL_PAT_USERNAME:
+        required: true
+      GLOBAL_PAT:
+        required: true
+jobs:
+  argocd:
+    environment: ${{ inputs.environment }}
+    name: "[ArgoCD]"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[ArgoCD]: set variables"
+        run: |
+          echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD }}" >> $GITHUB_ENV
+          echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
+          echo "SLACK_WEBHOOK=${{ secrets.STAG_DEPLOYMENT_SLACK_CHANNEL }}" >> $GITHUB_ENV
+          echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
+      - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app set "${{inputs.app-name}}"
+          options: --revision ${{ inputs.branch }}
+      - name: "[ArgoCD]: update docker image in ArgoCD Application ${{ inputs.app-name }} tag to ${{ inputs.tag }}"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app set "${{inputs.app-name}}"
+          options: --helm-set "${{ inputs.tagKey }}=${{ inputs.tag }}"
+      - name: "[ArgoCD]: trigger refresh"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app get "${{inputs.app-name}}"
+          options: --hard-refresh
+      - name: "[ArgoCD]: trigger sync"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app sync "${{inputs.app-name}}"
+      - name: "[ArgoCD]: wait for deploy to complete"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app wait "${{inputs.app-name}}" --timeout ${{inputs.timeout}}
+      - name: "Notify Slack of deployment status"
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_ICON: https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png
+          SLACK_MESSAGE: "${{ inputs.app-name }} ArgoCD successfully deployed from ${{ inputs.branch }} to ${{ inputs.environment }}, status: ${{ job.status }}"
+          SLACK_TITLE: "**${{ inputs.environment }}**: ${{ inputs.app-name }} ArgoCD deployment notification, status: ${{ job.status }}"
+          SLACK_USERNAME: cicdBot
+          SLACK_WEBHOOK: ${{ env.SLACK_WEBHOOK }}

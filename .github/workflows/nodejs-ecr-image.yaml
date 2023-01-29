@@ -1,0 +1,175 @@
+name: "Build ECR ArgoCD"
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force build?'
+        type: boolean
+        required: true
+        default: false
+      env:
+        type: choice
+        description: 'Environment'
+        required: true
+        options:
+          - 'dev'
+          - 'stag'
+          - 'prod'
+        default: 'stag'
+
+jobs:
+  build-push-ecr:
+    if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || github.event.inputs.env == 'stag'))
+    # builds when: master or branch with force flag & push image to ECR
+    name: "Build job"
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v2
+      - name: "[Build] configure git for private modules"
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: "[Build]: configure AWS credentials stag"
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_NEW_STAG_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CI_NEW_STAG_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.NEW_STAG_REGION }}
+      - name: "Build: Amazon ECR \"Login\""
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr-stage
+      - name: "[Build]: build image & upload to ECR stage"
+        id: docker-build-stage
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-stage.outputs.registry }}
+          ECR_REPO: ${{ env.ECR_REPO }}
+          GOPRIVATE: "github.com/infralight/*"
+        run: |
+          docker build -f Dockerfile -t $ECR_REGISTRY/$ECR_REPO:${GITHUB_SHA::6} .
+          docker push $ECR_REGISTRY/$ECR_REPO:${GITHUB_SHA::6}
+          echo "::set-output name=appsrv_image::$ECR_REGISTRY/$ECR_REPO:${GITHUB_SHA::6}"
+          echo "::set-output name=sha6::${GITHUB_SHA::6}"
+      - name: "[Build]: tag built image as latest if branch master"
+        id: docker-tag-upload-latest
+        if: (github.ref == 'refs/heads/master')
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-stage.outputs.registry }}
+          ECR_REPO: ${{ env.ECR_REPO }}
+          IMAGE_STAG: ${{ steps.docker-build-stage.outputs.appsrv_image }}
+          IMAGE_TAG: ${{ steps.docker-build-stage.outputs.sha6 }}
+        run: |
+          docker tag $IMAGE_STAG $ECR_REGISTRY/$ECR_REPO:latest
+          docker push $ECR_REGISTRY/$ECR_REPO:latest
+      - name: "[Build]: configure AWS credentials"
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.env == 'prod' && github.event.inputs.force)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.PROD_REGION }}
+      - name: "Build: Amazon ECR \"Login\""
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.env == 'prod' && github.event.inputs.force)
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr-prod-us
+      - name: "[Build]: tag built image as latest & upload ECR prod"
+        id: docker-build-prod-us
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.env == 'prod' && github.event.inputs.force)
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-prod-us.outputs.registry }}
+          ECR_REPO: ${{ env.ECR_REPO }}
+          IMAGE_STAG: ${{ steps.docker-build-stage.outputs.appsrv_image }}
+          IMAGE_TAG: ${{ steps.docker-build-stage.outputs.sha6 }}
+        run: |
+          docker tag $IMAGE_STAG $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG 
+          docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG     
+          echo "::set-output name=appsrv_image::$ECR_REGISTRY/$ECR_REPO:${GITHUB_SHA::6}"
+    outputs:
+      tag: ${{ steps.docker-build-stage.outputs.sha6 }}
+      image_stag: ${{ steps.docker-build-stage.outputs.appsrv_image }}
+      image_prod_us: ${{ steps.docker-build-prod-us.outputs.appsrv_image }}
+  argocd:
+    needs: build-push-ecr
+    strategy:
+      matrix:
+        include:
+          - env: 'stag'
+            region: 'eu-west-1'
+            app: 'app-server'
+            argourl: "argocd.stag.gofirefly.io"
+            tag: "${{ needs.build-push-ecr.outputs.tag }}"
+            image: "${{ needs.build-push-ecr.outputs.image_stag }}"
+          - env: 'stag'
+            region: 'eu-west-1'
+            app: 'external-api'
+            argourl: "argocd.stag.gofirefly.io"
+            tag: "${{ needs.build-push-ecr.outputs.tag }}"
+            image: "${{ needs.build-push-ecr.outputs.image_stag }}"
+          - env: 'prod'
+            region: 'us-east-1'
+            app: 'app-server'
+            argourl: "prod-argocd.infralight.cloud"
+            tag: "${{ needs.build-push-ecr.outputs.tag }}"
+            image: "${{ needs.build-push-ecr.outputs.image_prod_us }}"
+          - env: 'prod'
+            region: 'us-east-1'
+            app: 'external-api'
+            argourl: "prod-argocd.infralight.cloud"
+            tag: "${{ needs.build-push-ecr.outputs.tag }}"
+            image: "${{ needs.build-push-ecr.outputs.image_prod_us }}"
+    name: "[ArgoCD] "
+    runs-on: 'ubuntu-latest'
+
+    steps:
+      - name: "[ArgoCD]: set variables - stag"
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push' && matrix.env == 'stag') || (github.event_name == 'workflow_dispatch' && matrix.env == 'stag')
+        run: |
+          echo "AWS_REGION=${{ secrets.NEW_STAG_REGION }}" >> $GITHUB_ENV
+          echo "ENV=stag" >> $GITHUB_ENV
+          echo "ARGOCD_TOKEN=${{ secrets.CI_STAG_ARGOCD }}" >> $GITHUB_ENV
+          echo "SLACK_WEBHOOK=${{ secrets.STAG_DEPLOYMENT_SLACK_CHANNEL }}" >> $GITHUB_ENV
+      - name: "[ArgoCD]: set variables - prod"
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push' && matrix.env == 'prod') || (github.event_name == 'workflow_dispatch' && (github.event.inputs.env == 'prod' && matrix.env == 'prod' && github.event.inputs.force))
+        run: |
+          echo "AWS_REGION=${{ secrets.PROD_REGION }}" >> $GITHUB_ENV
+          echo "ENV=prod" >> $GITHUB_ENV
+          echo "ARGOCD_TOKEN=${{ secrets.CI_PROD_ARGOCD }}" >> $GITHUB_ENV
+          echo "SLACK_WEBHOOK=${{ secrets.PROD_DEPLOYMENT_SLACK_CHANNEL }}" >> $GITHUB_ENV
+      - name: "[ArgoCD]: modify application revision target to ${{github.ref_name}}"
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app set "${{matrix.app}}"
+          options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --revision ${{github.ref_name}} --grpc-web
+      - name: "[ArgoCD]: update docker image in ArgoCD Application ${{ matrix.app }} tag to ${{ matrix.tag }}"
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app set "${{matrix.app}}"
+          options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --helm-set "argocd.tag=${{ matrix.tag }}" --grpc-web
+      - name: "[ArgoCD]: trigger refresh"
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app get "${{matrix.app}}"
+          options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --hard-refresh
+      - name: "[ArgoCD]: trigger sync"
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app sync "${{matrix.app}}"
+          options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --grpc-web
+      - name: "[ArgoCD]: wait for deploy to complete"
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app wait "${{matrix.app}}" --timeout 300
+          options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --grpc-web
+      - name: "Notify Slack of deployment status"
+        if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_ICON: https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png
+          SLACK_MESSAGE: "${{matrix.app}} ArgoCD successfully deployed from ${{ github.ref }} to ${{ matrix.env }}, status: ${{ job.status }}"
+          SLACK_TITLE: "**${{ matrix.env }}**: ${{ env.APP_NAME}} ArgoCD deployment notification, status: ${{ job.status }}"
+          SLACK_USERNAME: cicdBot
+          SLACK_WEBHOOK: ${{ env.SLACK_WEBHOOK }}
