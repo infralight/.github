@@ -44,11 +44,11 @@ jobs:
         with:
           command: app set "${{inputs.app-name}}"
           options: --revision ${{ inputs.branch }}
-      - name: "[ArgoCD]: update docker image in ArgoCD Application ${{ inputs.app-name }} tag to ${{ inputs.tag }}"
+      - name: "[ArgoCD]: update docker image in ArgoCD Application ${{ inputs.app-name }} tag to ${{ inputs.tag::6 }}"
         uses: clowdhaus/argo-cd-action/@v1.5.0
         with:
           command: app set "${{inputs.app-name}}"
-          options: --helm-set "${{ inputs.tagKey }}=${{ inputs.tag }}"
+          options: --helm-set "${{ inputs.tagKey }}=${{ inputs.tag::6 }}"
       - name: "[ArgoCD]: trigger refresh"
         uses: clowdhaus/argo-cd-action/@v1.5.0
         with:
