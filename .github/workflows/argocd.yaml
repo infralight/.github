@@ -65,7 +65,6 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: ${{ job.status }}
-          SLACK_ICON: https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png
           SLACK_MESSAGE: "${{ inputs.app-name }} ArgoCD successfully deployed from ${{ inputs.branch }} to ${{ inputs.environment }}, status: ${{ job.status }}"
           SLACK_TITLE: "**${{ inputs.environment }}**: ${{ inputs.app-name }} ArgoCD deployment notification, status: ${{ job.status }}"
           SLACK_USERNAME: cicdBot
