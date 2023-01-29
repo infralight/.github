@@ -9,9 +9,6 @@ on:
       branch:
         type: string
         required: true
-      tag:
-        type: string
-        required: true 
       tagKey:
         type: string
         required: true
