@@ -96,11 +96,13 @@ jobs:
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: "Build"
+        id: build
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
           make docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
           docker tag docker.io/library/tempimage ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ vars.CI_ACCOUNT_ID }}.dkr.ecr.${{ vars.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
+          echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
       - name: "Run Trivy vulnerability scanner"
         if: ${{ inputs.trivy-scan == 'true' }}
         uses: aquasecurity/trivy-action@master
@@ -129,4 +131,4 @@ jobs:
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
     outputs:
-      tag: ${GITHUB_SHA::6}    
+      tag: ${{ steps.build.outputs.tag }}
