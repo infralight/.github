@@ -32,10 +32,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "[ArgoCD]: set variables"
+        id: vars
         run: |
           echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD }}" >> $GITHUB_ENV
           echo "ARGOCD_SERVER=${{ vars.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
+          echo "::set-output name=tag::${GITHUB_SHA::6}"          
       - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
         uses: clowdhaus/argo-cd-action/@v1.5.0
         with:
@@ -45,7 +47,7 @@ jobs:
         uses: clowdhaus/argo-cd-action/@v1.5.0
         with:
           command: app set "${{inputs.app-name}}"
-          options: --helm-set "${{ inputs.tagKey }}=${GITHUB_SHA::6}"
+          options: --helm-set "${{ inputs.tagKey }}=${{ steps.vars.tag }}"
       - name: "[ArgoCD]: trigger refresh"
         uses: clowdhaus/argo-cd-action/@v1.5.0
         with:
