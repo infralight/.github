@@ -41,7 +41,7 @@ jobs:
           echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
           if [[ "${{ inputs.environment }}" == "dev" ]]; then
             echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
-          fi          
+          fi
       - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
         uses: clowdhaus/argo-cd-action/@v1.5.0
         with:
