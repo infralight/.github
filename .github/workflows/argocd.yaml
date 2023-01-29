@@ -20,8 +20,8 @@ on:
         default: 'dev'
         required: false
       timeout:
-        type: number
-        default: 300
+        type: string
+        default: '300'
         required: false
     secrets:
       GLOBAL_PAT_USERNAME:
@@ -62,7 +62,7 @@ jobs:
       - name: "[ArgoCD]: wait for deploy to complete"
         uses: clowdhaus/argo-cd-action/@v1.5.0
         with:
-          command: app wait "${{inputs.app-name}}" --timeout ${{inputs.timeout}}
+          command: app wait ${{ inputs.app-name }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
         uses: rtCamp/action-slack-notify@v2
         env:
