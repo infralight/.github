@@ -59,7 +59,15 @@ on:
       run:
         required: false
         type: string
-
+    secrets:
+      GLOBAL_PAT_USERNAME:
+        required: true
+      GLOBAL_PAT:
+        required: true
+      CI_AWS_CRED_KEY:
+        required: true
+      CI_AWS_CRED_SECRET:
+        required: true
 jobs:
   tests:
     name: "Run Golang Tests"
