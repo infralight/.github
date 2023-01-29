@@ -79,13 +79,15 @@ jobs:
       run: ${{ inputs.cmd-tests }}
     secrets:
       GLOBAL_PAT: ${{ secrets.GLOBAL_PAT }}
-  build-push-ecr:
+  build:
     environment: ${{ inputs.environment }}
     name: "Build & Push ECR Docker Image "
     runs-on: 'ubuntu-latest'
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
+    outputs:
+      tag: ${{ steps.build.outputs.tag }}      
     steps:
       - uses: actions/checkout@v2
       - name: "Set up Go"
@@ -130,5 +132,3 @@ jobs:
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
-    outputs:
-      tag: ${{ steps.build.outputs.tag }}
