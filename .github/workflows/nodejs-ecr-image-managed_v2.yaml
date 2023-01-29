@@ -110,8 +110,8 @@ jobs:
       - name: "configure aws credentials"
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          aws-access-key-id: ${{ vars.CI_AWS_CRED_KEY }}
+          aws-secret-access-key: ${{ vars.CI_AWS_CRED_SECRET }}
           aws-region: ${{ vars.CI_REGION }}
       - name: "login ecr"
         uses: aws-actions/amazon-ecr-login@v1
