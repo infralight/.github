@@ -12,6 +12,9 @@ on:
       tag:
         type: string
         required: true
+      sha:
+        type: string
+        required: true        
       tagKey:
         type: string
         required: true
