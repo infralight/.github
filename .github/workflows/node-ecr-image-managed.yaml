@@ -1,4 +1,4 @@
-  name: Reusable NodeJS Build ECR Image
+name: Reusable NodeJS Build ECR Image
 
 on:
   workflow_call:
