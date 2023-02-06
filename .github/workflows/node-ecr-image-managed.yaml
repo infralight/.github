@@ -76,13 +76,8 @@ jobs:
   tests:
     name: "Run Golang Tests"
     if: inputs.run-tests == true
-    uses: ./.github/workflows/golang-tests.yaml
-    with:
-      go-version: ${{ inputs.go-version }}
-      custom: ${{ inputs.custom-tests }}
-      run: ${{ inputs.cmd-tests }}
-    secrets:
-      GLOBAL_PAT: ${{ secrets.GLOBAL_PAT }}
+    run: |
+      make test-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
   build:
     environment: ${{ inputs.environment }}
     name: "Build & Push ECR Docker Image "
