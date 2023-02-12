@@ -102,6 +102,7 @@ jobs:
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - run: make test-${{ inputs.app-name }}
   build-push-ecr:
+    needs: tests
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
     runs-on: 'ubuntu-latest'
