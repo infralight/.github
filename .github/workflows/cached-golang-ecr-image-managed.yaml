@@ -1,0 +1,160 @@
+name: Reusable Golang Build ECR Image
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      node-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      react-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      python-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      custom:
+        type: boolean
+        required: false
+        default: false
+      run-tests:
+        type: boolean
+        required: false
+        default: false
+      trivy-scan:
+        type: boolean
+        required: false
+        default: false
+      custom-tests:
+        type: boolean
+        required: false
+        default: false
+      cmd-tests:
+        type: string
+        required: false
+        default: "go test ./..."
+      app-name:
+        type: string
+        required: true
+      branch:
+        type: string
+        required: true
+      event_name:
+        type: string
+        required: true
+      environment:
+        type: string
+        default: 'dev'
+        required: false
+      latest:
+        type: boolean
+        required: false
+        default: false
+      run:
+        required: false
+        type: string
+    secrets:
+      GLOBAL_PAT_USERNAME:
+        required: true
+      GLOBAL_PAT:
+        required: true
+      CI_AWS_CRED_KEY:
+        required: true
+      CI_AWS_CRED_SECRET:
+        required: true
+      CI_REGION:
+        required: true
+      CI_ACCOUNT_ID:
+        required: true
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=go-build::$(go env GOCACHE)"
+          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Go Build Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.go-cache-paths.outputs.go-build }}
+            ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-${{ inputs.app-name }}-test-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.app-name }}/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ inputs.app-name }}-test
+            ${{ runner.os }}-${{ inputs.app-name }}-build
+            ${{ runner.os }}-full-test
+      - name: Configure git for private modules
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - run: make test-${{ inputs.app-name }}
+  build-push-ecr:
+    name: "Build & Push ECR Docker Image "
+    environment: ${{ inputs.environment }}
+    runs-on: 'ubuntu-latest'
+    env:
+      HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
+      HAVE_RUN_CMD: ${{ inputs.run != '' }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Set up Go"
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
+      - name: "[Build] configure git for private modules"
+        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: Set output
+        id: vars
+        run: |
+          echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+          echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: "Build"
+        run: |
+          make ci-build-${{ inputs.app-name }} TAG=${{ steps.vars.outputs.tag }}
+      - name: "Dockerfile"
+        if: ${{ env.HAVE_RUN_CMD == 'false' }}
+        run: |
+          make docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
+          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
+          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
+      - name: "Run Trivy vulnerability scanner"
+        if: ${{ inputs.trivy-scan == 'true' }}
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: docker.io/library/tempimage
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+      - name: "configure aws credentials"
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
+          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          aws-region: ${{ secrets.CI_REGION }}
+      - name: "login ecr"
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
+      - name: "upload image"
+        if: (env.HAVE_RUN_CMD == 'false')
+        run: |
+          docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
+          if ${{inputs.latest}}; then docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest; fi
+      - name: "[Build]: build image & upload to ECR - CUSTOM"
+        if: ${{ env.HAVE_RUN_CMD == 'true' }}
+        run: ${{ inputs.run }}
