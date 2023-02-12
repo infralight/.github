@@ -124,7 +124,7 @@ jobs:
           echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: "Build"
         run: |
-          make ci-build-${{ inputs.app-name }} TAG=${{ steps.vars.outputs.tag }}
+          make ci-build-${{ inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} DATE_BUILD=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA}
       - name: "Dockerfile"
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
