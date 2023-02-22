@@ -81,12 +81,12 @@ jobs:
     steps:
       - uses: actions/setup-go@v2
         with:
-          go-version: \\$\\{{ inputs.go-version }}
+          go-version: ${{ inputs.go-version }}
       - name: Checkout
         uses: actions/checkout@v2
       - name: Configure git for private modules
-        run: git config --global url."https://\\$\\{{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
-      - run: make test-\\$\\{{ inputs.app-name }}
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - run: make test-${{ inputs.app-name }}
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
