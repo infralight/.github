@@ -101,6 +101,8 @@ jobs:
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - run: make test-${{ inputs.app-name }}
+        env:
+          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"      
   build-push-ecr:
     needs: tests
     name: "Build & Push ECR Docker Image "
