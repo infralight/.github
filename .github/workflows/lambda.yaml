@@ -1,0 +1,41 @@
+name: Reusable Lambda Upload Sync
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        type: string
+        required: true
+      branch:
+        type: string
+        required: true
+      environment:
+        type: string
+        default: 'dev'
+        required: false
+    secrets:
+      CI_SLACK_WEBHOOK:
+        required: true
+jobs:
+  lambda:
+    environment: ${{ inputs.environment }}
+    name: "[Lambda]"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[Lambda] Deploy"
+        uses: appleboy/lambda-action@v0.1.9
+        with:
+          aws_access_key_id: ${{ secrets.CI_AWS_CRED_KEY }}
+          aws_secret_access_key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          aws_region: ${{ secrets.CI_REGION }}
+          function_name: ${{ inputs.environment }}-${{ inputs.app-name }}
+          image_uri: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
+      - name: "Notify Slack of deployment status"
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON: https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_MESSAGE: "${{ inputs.app-name }} Lambda successfully deployed from ${{ inputs.branch }} to ${{ inputs.environment }}, status: ${{ job.status }}"
+          SLACK_TITLE: "**${{ inputs.environment }}**: ${{ inputs.app-name }} Lambda deployment notification, status: ${{ job.status }}"
+          SLACK_USERNAME: cicdBot
+          SLACK_WEBHOOK: ${{ secrets.CI_SLACK_WEBHOOK }}
