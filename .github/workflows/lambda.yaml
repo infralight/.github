@@ -16,6 +16,14 @@ on:
     secrets:
       CI_SLACK_WEBHOOK:
         required: true
+      CI_AWS_CRED_KEY:
+        required: true
+      CI_AWS_CRED_SECRET:
+        required: true
+      CI_REGION:
+        required: true
+      CI_ACCOUNT_ID:
+        required: true
 jobs:
   lambda:
     environment: ${{ inputs.environment }}
