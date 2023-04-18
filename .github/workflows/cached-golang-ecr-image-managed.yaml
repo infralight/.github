@@ -105,7 +105,6 @@ jobs:
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
   build-push-ecr:
-    needs: tests
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
     runs-on: 'ubuntu-latest'
