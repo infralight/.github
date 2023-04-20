@@ -22,10 +22,6 @@ on:
       branch:
         type: string
         required: true
-      domain:
-        type: string
-        default: 'prod.external.api.infralight.cloud'
-        required: true
       environment:
         type: string
         default: 'dev'
