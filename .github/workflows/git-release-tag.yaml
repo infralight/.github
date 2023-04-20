@@ -1,7 +1,12 @@
-name: Reusable Tag and Release
+name: Reusable Release Tag
 
 on:
   workflow_call:
+    inputs:
+      branch:
+        type: string
+        default: master
+        required: true
 
 jobs:
   tests:
@@ -15,10 +20,9 @@ jobs:
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@1.36.0
         env:
-          RELEASE_BRANCHES: master
+          RELEASE_BRANCHES: ${{ inputs.branch }}
           GITHUB_TOKEN: ${{ github.token }}
           WITH_V: true
           INITIAL_VERSION: 1.0.0
           PRERELEASE_SUFFIX: beta
           VERBOSE: true
-
