@@ -49,6 +49,8 @@ on:
         required: true
       CI_SLACK_WEBHOOK:
         required: true
+      CI_DISTRIBUTION_ID:
+        required: true
 jobs:
   build:
     environment: ${{ inputs.environment }}
