@@ -37,7 +37,7 @@ jobs:
           aws_secret_access_key: ${{ secrets.CI_AWS_CRED_SECRET }}
           aws_region: ${{ secrets.CI_REGION }}
           function_name: ${{ inputs.environment }}-${{ inputs.app-name }}
-          image_uri: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
+          image_uri: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
       - name: "Notify Slack of deployment status"
         uses: rtCamp/action-slack-notify@v2
         env:
