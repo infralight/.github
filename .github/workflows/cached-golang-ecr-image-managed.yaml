@@ -137,6 +137,12 @@ jobs:
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: "configure aws credentials"
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
+          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          aws-region: ${{ secrets.CI_REGION }}
       - name: Set output
         id: vars
         run: |
@@ -150,7 +156,7 @@ jobs:
       - name: "Dockerfile"
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
-          make ci-docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ inputs.environment == 'prod' && 'prod-gitleaks-configuration/gitleaks.toml' || format('gofirefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment:) }}
+          make ci-docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ inputs.environment == 'prod' && 'prod-gitleaks-configuration/gitleaks.toml' || format('gofirefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
@@ -163,12 +169,6 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-      - name: "configure aws credentials"
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
-          aws-region: ${{ secrets.CI_REGION }}
       - name: "login ecr"
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
