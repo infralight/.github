@@ -6,6 +6,11 @@ on:
       app-name:
         type: string
         required: true
+      lambda-name:
+        type: string
+        required: false
+        default: ''
+        description: Overrides app-name when setting lambda name
       branch:
         type: string
         required: true
