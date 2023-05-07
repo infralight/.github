@@ -74,9 +74,9 @@ on:
         required: true
 jobs:
   tests:
-    runs-on: ubuntu-latest
-    name: "Run Golang Tests"
     if: inputs.run-tests == true
+    runs-on: 'ubuntu-latest'
+    name: "Run Golang Tests"
     steps:
       - run: |
           make test-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
