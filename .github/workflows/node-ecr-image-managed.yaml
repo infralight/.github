@@ -23,6 +23,10 @@ on:
         type: boolean
         required: false
         default: false
+      ecr-prefix:
+        type: string
+        required: false
+        default: ''        
       run-tests:
         type: boolean
         required: false
