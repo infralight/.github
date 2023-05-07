@@ -74,10 +74,12 @@ on:
         required: true
 jobs:
   tests:
+    runs-on: ubuntu-latest
     name: "Run Golang Tests"
     if: inputs.run-tests == true
-    run: |
-      make test-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
+    steps:
+      - run: |
+          make test-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
   build:
     environment: ${{ inputs.environment }}
     name: "Build & Push ECR Docker Image "
