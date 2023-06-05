@@ -87,7 +87,7 @@ jobs:
       - name: Invalidate Cloudfront
         uses: chetan/invalidate-cloudfront-action@master
         env:
-          PATHS: '/index.html'
+          PATHS: '/*'
           AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
