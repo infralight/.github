@@ -26,7 +26,7 @@ on:
       ecr-prefix:
         type: string
         required: false
-        default: ''        
+        default: ''
       run-tests:
         type: boolean
         required: false
