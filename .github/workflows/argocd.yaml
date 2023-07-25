@@ -18,7 +18,7 @@ on:
         required: false
       timeout:
         type: string
-        default: '300'
+        default: '500'
         required: false
     secrets:
       CI_ARGOCD:
