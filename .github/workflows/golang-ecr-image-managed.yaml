@@ -23,6 +23,10 @@ on:
         type: string
         required: false
         default: ''
+      ecr-public:
+        type: boolean
+        required: false
+        default: false
       custom:
         type: boolean
         required: false
@@ -120,7 +124,9 @@ jobs:
         run: |
           make ci-docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ inputs.environment == 'prod' && 'prod-gitleaks-configuration/gitleaks.toml' || format('gofirefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest
+          if ${{inputs.ecr-public}}; then docker tag docker.io/library/tempimage public.ecr.aws/firefly/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest; fi
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:${GITHUB_SHA::6}
+          if ${{inputs.ecr-public}}; then docker tag docker.io/library/tempimage public.ecr.aws/firefly/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:${GITHUB_SHA::6}; fi
       - name: "Run Trivy vulnerability scanner"
         if: ${{ inputs.trivy-scan == 'true' }}
         uses: aquasecurity/trivy-action@master
@@ -139,6 +145,8 @@ jobs:
         run: |
           docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:${GITHUB_SHA::6}
           if ${{inputs.latest}}; then docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest; fi
+          if ${{inputs.ecr-public}}; then docker push public.ecr.aws/firefly/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:${GITHUB_SHA::6}; fi
+          if ${{inputs.ecr-public}} && ${{inputs.latest}}; then docker push public.ecr.aws/firefly/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest; fi
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
