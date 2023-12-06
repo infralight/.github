@@ -1,0 +1,26 @@
+name: Reusable Test Go
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        type: string
+        default: ''
+        required: true
+      go-version:
+        type: string
+        default: '1.18.5'
+        required: true
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure git for private modules
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '${{ inputs.go-version }}'
+      - run: make test-${{ inputs.app }}
