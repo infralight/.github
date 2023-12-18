@@ -12,6 +12,10 @@ on:
       tagKey:
         type: string
         required: true
+      skipRevision:
+        type: boolean
+        required: false
+        default: false
       environment:
         type: string
         default: 'dev'
@@ -46,6 +50,7 @@ jobs:
           fi
       - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
         uses: clowdhaus/argo-cd-action/@v1.5.0
+        if: ${{ !inputs.skipRevision }}
         with:
           command: app set "${{inputs.app-name}}"
           options: --revision ${{ inputs.branch }}
