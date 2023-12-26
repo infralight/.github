@@ -14,7 +14,7 @@ on:
       environment:
         type: string
         default: 'prod'
-        required: true
+        required: false
 
 jobs:
   tests:
