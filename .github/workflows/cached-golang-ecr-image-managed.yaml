@@ -63,6 +63,9 @@ on:
       run:
         required: false
         type: string
+      global-cache:
+        required: false
+        type: string        
     secrets:
       GLOBAL_PAT_USERNAME:
         required: true
@@ -97,7 +100,7 @@ jobs:
           path: |
             ${{ steps.go-cache-paths.outputs.go-build }}
             ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-${{ inputs.app-name }}-test-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.app-name }}/go.sum') }}
+          key: global
           restore-keys: |
             ${{ runner.os }}-${{ inputs.app-name }}-test
             ${{ runner.os }}-${{ inputs.app-name }}-build
@@ -131,7 +134,7 @@ jobs:
           path: |
             ${{ steps.go-cache-paths.outputs.go-build }}
             ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-${{ inputs.app-name }}-build-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.app-name }}/go.sum') }}
+          key: global
           restore-keys: |
             ${{ runner.os }}-${{ inputs.app-name }}-build
       - name: "[Build] configure git for private modules"
