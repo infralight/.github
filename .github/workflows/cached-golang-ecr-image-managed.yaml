@@ -102,9 +102,7 @@ jobs:
             ${{ steps.go-cache-paths.outputs.go-mod }}
           key: global
           restore-keys: |
-            ${{ runner.os }}-${{ inputs.app-name }}-test
-            ${{ runner.os }}-${{ inputs.app-name }}-build
-            ${{ runner.os }}-full-test
+            global
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - run: make test-${{ inputs.app-name }}
@@ -136,7 +134,7 @@ jobs:
             ${{ steps.go-cache-paths.outputs.go-mod }}
           key: global
           restore-keys: |
-            ${{ runner.os }}-${{ inputs.app-name }}-build
+            global
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
