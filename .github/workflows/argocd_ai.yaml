@@ -1,0 +1,87 @@
+name: Reusable ArgoCD Sync
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        type: string
+        required: true
+      branch:
+        type: string
+        required: true
+      tagKey:
+        type: string
+        required: true
+      skipRevision:
+        type: boolean
+        required: false
+        default: false
+      clusterName:
+        type: string
+        default: 'prod-external-services'
+        required: false
+      environment:
+        type: string
+        default: 'dev'
+        required: false
+      timeout:
+        type: string
+        default: '500'
+        required: false
+    secrets:
+      CI_ARGOCD:
+        required: true
+      CI_SLACK_WEBHOOK:
+        required: true
+      CI_ARGOCD_SERVER:
+        required: true
+jobs:
+  argocd:
+    environment: ${{ inputs.environment }}
+    name: "[ArgoCD]"
+    runs-on: [self-hosted, "${{ inputs.environment }}"]
+    steps:
+      - name: "[ArgoCD]: set variables"
+        id: vars
+        run: |
+          echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD }}" >> $GITHUB_ENV
+          echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
+          echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
+          echo "TAG=${GITHUB_SHA::6}" >> $GITHUB_ENV
+          echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
+          if [[ "${{ inputs.environment }}" == "dev" ]]; then
+            echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
+          fi
+      - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        if: ${{ !inputs.skipRevision }}
+        with:
+          command: app set "${{ inputs.environment }}-${{inputs.clusterName}}-${{inputs.app-name}}"
+          options: --revision ${{ inputs.branch }}
+      - name: "[ArgoCD]: update docker image in ArgoCD Application ${{ inputs.app-name }} tag to ${{ env.TAG }}"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app set "${{ inputs.environment }}-${{inputs.clusterName}}-${{inputs.app-name}}"
+          options: --helm-set "${{ inputs.tagKey }}=${{ env.TAG }}"
+      - name: "[ArgoCD]: trigger refresh"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app get "${{ inputs.environment }}-${{inputs.clusterName}}-${{inputs.app-name}}"
+          options: --hard-refresh
+      - name: "[ArgoCD]: trigger sync"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app sync"${{ inputs.environment }}-${{inputs.clusterName}}-${{inputs.app-name}}"
+      - name: "[ArgoCD]: wait for deploy to complete"
+        uses: clowdhaus/argo-cd-action/@v1.5.0
+        with:
+          command: app wait "${{ inputs.environment }}-${{inputs.clusterName}}-${{inputs.app-name}}" --timeout ${{ inputs.timeout }}
+      - name: "Notify Slack of deployment status"
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON: https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_MESSAGE: "${{ inputs.app-name }} ArgoCD successfully deployed from ${{ inputs.branch }} to ${{ inputs.environment }}, status: ${{ job.status }}"
+          SLACK_TITLE: "**${{ inputs.environment }}**: ${{ inputs.app-name }} ArgoCD deployment notification, status: ${{ job.status }}"
+          SLACK_USERNAME: cicdBot
+          SLACK_WEBHOOK: ${{ secrets.CI_SLACK_WEBHOOK }}
