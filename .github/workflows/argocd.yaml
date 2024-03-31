@@ -49,27 +49,27 @@ jobs:
             echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
           fi
       - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@v2.0.0
         if: ${{ !inputs.skipRevision }}
         with:
           command: app set "${{inputs.app-name}}"
           options: --revision ${{ inputs.branch }}
       - name: "[ArgoCD]: update docker image in ArgoCD Application ${{ inputs.app-name }} tag to ${{ env.TAG }}"
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app set "${{inputs.app-name}}"
           options: --helm-set "${{ inputs.tagKey }}=${{ env.TAG }}"
       - name: "[ArgoCD]: trigger refresh"
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app get "${{inputs.app-name}}"
           options: --hard-refresh
       - name: "[ArgoCD]: trigger sync"
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app sync "${{inputs.app-name}}"
       - name: "[ArgoCD]: wait for deploy to complete"
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app wait ${{ inputs.app-name }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
