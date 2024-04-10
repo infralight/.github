@@ -1,0 +1,21 @@
+name: bump-monorepo-version-tag
+description: "Bump the version tag of a component in a monorepo"
+inputs:
+  component-name:
+    description: "Component name"
+    required: true
+  component-path:
+    description: "Component path"
+    required: true
+  starting-version:
+    description: "Starting version"
+    required: false
+    default: "0.0.0"
+outputs:
+  tag:
+    description: "Full tag, in the format COMPONENT-vVERSION"
+  version:
+    description: "VERSION component of full tag"
+runs:
+  using: "node20"
+  main: "dist/index.js"
