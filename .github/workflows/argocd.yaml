@@ -44,7 +44,7 @@ jobs:
           echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD }}" >> $GITHUB_ENV
           echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
-          echo 'ARGOCD_GRPC_KEEP_ALIVE_MIN=60s' >> $GITHUB_ENV
+          echo 'ARGOCD_GRPC_KEEP_ALIVE_MIN=120s' >> $GITHUB_ENV
           echo "TAG=${GITHUB_SHA::6}" >> $GITHUB_ENV
           echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
           if [[ "${{ inputs.environment }}" == "dev" ]]; then
