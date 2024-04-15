@@ -33,7 +33,7 @@ on:
         required: true
 jobs:
   argocd:
-    environment: ${{ contains(inputs.environment, 'stag') && 'stag' || 'prod' }}
+    environment: ${{ inputs.environment }}
     name: "[ArgoCD]"
     runs-on: [self-hosted, "${{ contains(inputs.environment, 'stag') && 'stag' || 'prod' }}"]
     steps:
