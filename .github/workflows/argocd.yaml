@@ -33,9 +33,9 @@ on:
         required: true
 jobs:
   argocd:
-    environment: ${{ inputs.environment }}
+    environment: ${{ contains(inputs.environment, 'stag') && stag || prod }}
     name: "[ArgoCD]"
-    runs-on: [self-hosted, "${{ inputs.environment }}"]
+    runs-on: [self-hosted, "${{ contains(inputs.environment, 'stag') && stag || prod }}"]
     steps:
       - name: "[ArgoCD]: set variables"
         id: vars
