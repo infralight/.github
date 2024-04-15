@@ -1,9 +1,6 @@
 name: bump-monorepo-version-tag
 description: "Bump the version tag of a component in a monorepo"
 inputs:
-  component-name:
-    description: "Component name"
-    required: true
   component-path:
     description: "Component path"
     required: true

@@ -36,21 +36,16 @@ async function run() {
 
         console.log(`Starting version is ${startingVersion}`);
 
-        // Get the component name and path
-        const componentName = core.getInput("component-name", {
-            required: true,
-        });
-
-        const pRegex = new RegExp("/$");
-
+        // Get the component path
         let componentPath = core.getInput("component-path", { required: true });
+
+        // Make sure path includes a trailing slash
+        const pRegex = new RegExp("/$");
         if (!pRegex.test(componentPath)) {
             componentPath += "/";
         }
 
-        const componentTagRegex = new RegExp(`${componentName}-v(.+)$`);
-
-        console.log(`Component is ${componentName} at ${componentPath}`);
+        const componentTagRegex = new RegExp(`${componentPath}v(.+)$`);
 
         // Get the list of commits that affected the component
         const log = await execGitCommand([
@@ -130,7 +125,7 @@ async function run() {
 
         console.log(`Bumped ${previousVersion} to ${version}`);
 
-        const tag = `${componentName}-v${version}`;
+        const tag = `${componentPath}v${version}`;
 
         console.log(`New tag is ${tag}`);
 

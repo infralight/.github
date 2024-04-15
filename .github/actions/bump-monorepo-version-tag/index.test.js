@@ -34,7 +34,6 @@ describe("Test GitHub Action", () => {
     test("scenario-1", async () => {
         core.getInput
             .mockReturnValueOnce("") // Mock starting-version input
-            .mockReturnValueOnce("component1") // Mock component-name input
             .mockReturnValueOnce("components/component1/"); // Mock component-path input
 
         // Mock results for the git commands that will be executed by the action.
@@ -77,14 +76,16 @@ describe("Test GitHub Action", () => {
 
         await run();
 
-        expect(core.setOutput).toHaveBeenCalledWith("tag", "component1-v0.1.0");
+        expect(core.setOutput).toHaveBeenCalledWith(
+            "tag",
+            "components/component1/v0.1.0",
+        );
         expect(core.setOutput).toHaveBeenCalledWith("version", "0.1.0");
     });
 
     test("scenario-2", async () => {
         core.getInput
             .mockReturnValueOnce("") // Mock starting-version input
-            .mockReturnValueOnce("component1") // Mock component-name input
             .mockReturnValueOnce("components/component1/"); // Mock component-path input
 
         exec.exec.mockImplementation((cmd, args, options) => {
@@ -97,7 +98,9 @@ describe("Test GitHub Action", () => {
                         "fatal: No names found, cannot describe anything.",
                     );
                 } else if (args[0] === "describe" && args[3] == "0001") {
-                    options.listeners.stdout(Buffer.from("component1-v1.35.0"));
+                    options.listeners.stdout(
+                        Buffer.from("components/component1/v1.35.0"),
+                    );
                     return Promise.resolve(0);
                 } else if (
                     args[0] === "log" &&
@@ -116,14 +119,16 @@ describe("Test GitHub Action", () => {
 
         await run();
 
-        expect(core.setOutput).toHaveBeenCalledWith("tag", "component1-v2.0.0");
+        expect(core.setOutput).toHaveBeenCalledWith(
+            "tag",
+            "components/component1/v2.0.0",
+        );
         expect(core.setOutput).toHaveBeenCalledWith("version", "2.0.0");
     });
 
     test("scenario-3", async () => {
         core.getInput
             .mockReturnValueOnce("v1.35.0") // Mock starting-version input
-            .mockReturnValueOnce("component1") // Mock component-name input
             .mockReturnValueOnce("components/component1"); // Mock component-path input
 
         // In both the starting-version and component-path we have provided the
@@ -168,7 +173,7 @@ describe("Test GitHub Action", () => {
 
         expect(core.setOutput).toHaveBeenCalledWith(
             "tag",
-            "component1-v1.35.1",
+            "components/component1/v1.35.1",
         );
         expect(core.setOutput).toHaveBeenCalledWith("version", "1.35.1");
     });
@@ -176,7 +181,6 @@ describe("Test GitHub Action", () => {
     test("scenario-4", async () => {
         core.getInput
             .mockReturnValueOnce("v1.35.0") // Mock starting-version input
-            .mockReturnValueOnce("component1") // Mock component-name input
             .mockReturnValueOnce("components/component1"); // Mock component-path input
 
         // In both the starting-version and component-path we have provided the
@@ -194,7 +198,9 @@ describe("Test GitHub Action", () => {
                         "fatal: No names found, cannot describe anything.",
                     );
                 } else if (args[0] === "describe" && args[3] == "0001") {
-                    options.listeners.stdout(Buffer.from("component1-v2.9.0"));
+                    options.listeners.stdout(
+                        Buffer.from("components/component1/v2.9.0"),
+                    );
                     return Promise.resolve(0);
                 } else if (
                     args[0] === "log" &&
@@ -215,7 +221,7 @@ describe("Test GitHub Action", () => {
 
         expect(core.setOutput).toHaveBeenCalledWith(
             "tag",
-            "component1-v2.10.0",
+            "components/component1/v2.10.0",
         );
         expect(core.setOutput).toHaveBeenCalledWith("version", "2.10.0");
     });

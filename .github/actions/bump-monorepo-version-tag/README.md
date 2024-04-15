@@ -5,7 +5,6 @@
 * [Overview](#overview)
 * [Usage](#usage)
     * [Inputs](#inputs)
-        * [`component-name`](#component-name)
         * [`component-path`](#component-path)
         * [`starting-version`](#starting-version)
     * [Outputs](#outputs)
@@ -20,8 +19,9 @@
 
 This GitHub action automatically bumps the version of a Go component in a
 monorepo, and tags the commit with the new version, using the prefix
-`COMPONENT-vVERSION`, where `COMPONENT` is the name of the component, and
-`VERSION` is the new version, in [semantic versioning](https://semver.org/) format (i.e. MAJOR.MINOR.PATCH).
+`COMPONENT_PATH/vVERSION`, where `COMPONENT_PATH` is the path to the directory
+where the component (and its go.mod file) reside, and `VERSION` is the new
+version, in [semantic versioning](https://semver.org/) format (i.e. MAJOR.MINOR.PATCH).
 
 The action automatically determines the new version like so:
 
@@ -40,10 +40,6 @@ The action automatically determines the new version like so:
 
 ### Inputs
 
-#### `component-name`
-
-**Required**: The name of the component, in kebab-case.
-
 #### `component-path`
 
 **Required**: The path in the repository where the component lives.
@@ -57,7 +53,7 @@ The starting version to use, in the format MAJOR.MINOR.PATCH. Do not provide the
 
 #### `tag`
 
-The full tag created, in the format `COMPONENT-vVERSION`.
+The full tag created, in the format `COMPONENT_PATH/vVERSION`.
 
 #### `version`
 
@@ -75,7 +71,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: infralight/.github/.github/actions/bump-monorepo-version-tag@master
         with:
-          component-name: 'some-microservice'
           component-path: 'path/to/microservice/'
           starting-version: '1.12.0' # optional, defaults to 0.0.0
 ```
