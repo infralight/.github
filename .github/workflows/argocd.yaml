@@ -54,7 +54,8 @@ jobs:
             echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
           fi
       - name: Clone helm-values repository
-        uses: actions/checkout@v2
+        if: ${{ env.NEW_APP_NAME }}
+        uses: actions/checkout@v4
         with:
           repository: infralight/helm-values
           path: tmp/helm-values
