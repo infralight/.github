@@ -33,13 +33,13 @@ on:
         required: true
       CI_ARGOCD_SERVER:
         required: true
+      CI_PAT:
+        required: true
 jobs:
   argocd:
     environment: ${{ inputs.environment }}
     name: "[ArgoCD]"
     runs-on: [self-hosted, "${{ inputs.environment }}"]
-    secrets:
-      pat: ${{ secrets.GLOBAL_PAT }}
     steps:
       - name: "[ArgoCD]: set variables"
         id: vars
@@ -61,7 +61,7 @@ jobs:
           repository: infralight/helm-values
           path: tmp/helm-values
           ref: master
-          token: ${{ secrets.pat }}
+          token: ${{ secrets.CI_PAT }}
       - name: "UPDATE IMAGE TAG"
         if: ${{ env.NEW_APP_NAME }}
         run: |
