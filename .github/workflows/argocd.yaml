@@ -1,4 +1,10 @@
 name: Reusable ArgoCD Sync
+run-name: Image update on ${{ inputs.env }}-${{ inputs.cluster }} 🚀
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  checks: write
 
 on:
   workflow_call:
