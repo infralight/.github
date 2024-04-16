@@ -54,12 +54,12 @@ jobs:
           fi
       - name: Clone helm-values repository
         if: ${{ env.NEW_APP_NAME }}
-        uses: actions/checkout@v2
-        run: git config --global url."https://${{ secrets.PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+        uses: actions/checkout@v4
         with:
           repository: infralight/helm-values
           path: tmp/helm-values
           ref: master
+          token: ${{ secrets.PAT }}
       - name: "UPDATE IMAGE TAG"
         if: ${{ env.NEW_APP_NAME }}
         run: |
