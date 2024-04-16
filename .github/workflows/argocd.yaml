@@ -59,7 +59,7 @@ jobs:
           repository: infralight/helm-values
           path: tmp/helm-values
           ref: master
-          token: ${{ secrets.PAT }}
+          token: ${{ secrets.GLOBAL_PAT }}
       - name: "UPDATE IMAGE TAG"
         if: ${{ env.NEW_APP_NAME }}
         run: |
