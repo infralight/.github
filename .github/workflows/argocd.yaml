@@ -1,11 +1,4 @@
 name: Reusable ArgoCD Sync
-run-name: Image update on ${{ inputs.env }}-${{ inputs.cluster }} 🚀
-permissions:
-  contents: write
-  pull-requests: write
-  actions: write
-  checks: write
-
 on:
   workflow_call:
     inputs:
@@ -61,7 +54,8 @@ jobs:
           fi
       - name: Clone helm-values repository
         if: ${{ env.NEW_APP_NAME }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
+        run: git config --global url."https://${{ secrets.PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
         with:
           repository: infralight/helm-values
           path: tmp/helm-values
@@ -74,7 +68,7 @@ jobs:
       - uses: EndBug/add-and-commit@v9
         if: ${{ env.NEW_APP_NAME }}
         with:
-          cwd: 'tmp/helm-values/dev/${{ inputs.environment }}'
+          cwd: 'tmp/helm-values/${{ inputs.environment }}'
           message: ${{ env.NEW_APP_NAME }} image updated to ${{ inputs.tagKey }}'
       - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
         uses: clowdhaus/argo-cd-action/@v2.0.0
