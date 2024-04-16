@@ -20,6 +20,9 @@ on:
         type: string
         default: 'dev'
         required: false
+      cluster:
+        type: string
+        required: false
       timeout:
         type: string
         default: '500'
@@ -41,6 +44,7 @@ jobs:
         id: vars
         run: |
           echo "APP_NAME=${{ contains(inputs.environment, 'env') && format('{0}-{1}', inputs.environment, inputs.app-name) || inputs.app-name}}" >> $GITHUB_ENV
+          echo "NEW_APP_NAME=${{ inputs.cluster && format('{0}-{1}-${2}', inputs.environment, inputs.cluster, inputs.app-name) || null }}" >> $GITHUB_ENV
           echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD }}" >> $GITHUB_ENV
           echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
@@ -49,30 +53,66 @@ jobs:
           if [[ "${{ inputs.environment }}" == "dev" ]]; then
             echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
           fi
+      - name: Clone helm-values repository
+        uses: actions/checkout@v2
+        with:
+          repository: infralight/helm-values
+          path: tmp/helm-values
+          ref: master
+      - name: "UPDATE IMAGE TAG"
+        if: ${{ env.NEW_APP_NAME }}
+        run: |
+          cd tmp/helm-values
+          yq eval -i '.base.tag=${{ inputs.tagKey }}' tmp/helm-values/dev/${{ inputs.environment }}/${{ inputs.app-name }}.yaml
+      - uses: EndBug/add-and-commit@v9
+        if: ${{ env.NEW_APP_NAME }}
+        with:
+          cwd: 'tmp/helm-values/dev/${{ inputs.environment }}'
+          message: ${{ env.NEW_APP_NAME }} image updated to ${{ inputs.tagKey }}'
       - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
         uses: clowdhaus/argo-cd-action/@v2.0.0
-        if: ${{ !inputs.skipRevision }}
+        if: ${{ !inputs.skipRevision && !env.NEW_APP_NAME }}
         with:
           command: app set "${{ env.APP_NAME }}"
           options: --revision ${{ inputs.branch }}
       - name: "[ArgoCD]: update docker image in ArgoCD Application ${{ env.APP_NAME }} tag to ${{ env.TAG }}"
+        if: ${{ !env.NEW_APP_NAME }}
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app set "${{ env.APP_NAME }}"
           options: --helm-set "${{ inputs.tagKey }}=${{ env.TAG }}"
       - name: "[ArgoCD]: trigger refresh"
+        if: ${{ !env.NEW_APP_NAME }}
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app get "${{ env.APP_NAME }}"
           options: --hard-refresh
       - name: "[ArgoCD]: trigger sync"
+        if: ${{ !env.NEW_APP_NAME }}
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app sync "${{ env.APP_NAME }}"
       - name: "[ArgoCD]: wait for deploy to complete"
+        if: ${{ !env.NEW_APP_NAME }}
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app wait ${{ env.APP_NAME }} --timeout ${{ inputs.timeout }}
+      - name: "[ArgoCD]: trigger refresh"
+        if: ${{ env.NEW_APP_NAME }}
+        uses: clowdhaus/argo-cd-action/@v2.0.0
+        with:
+          command: app get "${{ env.NEW_APP_NAME }}"
+          options: --hard-refresh
+      - name: "[ArgoCD]: trigger sync"
+        if: ${{ env.NEW_APP_NAME }}
+        uses: clowdhaus/argo-cd-action/@v2.0.0
+        with:
+          command: app sync "${{ env.NEW_APP_NAME }}"
+      - name: "[ArgoCD]: wait for deploy to complete"
+        if: ${{ env.NEW_APP_NAME }}
+        uses: clowdhaus/argo-cd-action/@v2.0.0
+        with:
+          command: app wait ${{ env.NEW_APP_NAME }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
         uses: rtCamp/action-slack-notify@v2
         env:
