@@ -66,12 +66,12 @@ jobs:
         uses: mikefarah/yq@master
         if: ${{ env.NEW_APP_NAME }}
         with:
-          yq -i '.base.tag=${{ inputs.tagKey }}' tmp/helm-values/dev/${{ inputs.environment }}/${{ inputs.app-name }}.yaml
+          cmd: yq -i '.base.tag = "${{ env.TAG }}"' tmp/helm-values/dev/${{ inputs.environment }}/${{ inputs.app-name }}.yaml
       - uses: EndBug/add-and-commit@v9
         if: ${{ env.NEW_APP_NAME }}
         with:
-          cwd: 'tmp/helm-values/${{ inputs.environment }}'
-          message: ${{ env.NEW_APP_NAME }} image updated to ${{ inputs.tagKey }}'
+          cwd: 'tmp/helm-values'
+          message: ${{ env.NEW_APP_NAME }} image updated to ${{ env.TAG }}'
           pull: '--rebase --autostash'
       - name: "[ArgoCD]: modify application revision target to ${{inputs.branch}}"
         uses: clowdhaus/argo-cd-action/@v2.0.0
