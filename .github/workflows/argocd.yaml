@@ -38,6 +38,8 @@ jobs:
     environment: ${{ inputs.environment }}
     name: "[ArgoCD]"
     runs-on: [self-hosted, "${{ inputs.environment }}"]
+    secrets:
+      pat: ${{ secrets.GLOBAL_PAT }}
     steps:
       - name: "[ArgoCD]: set variables"
         id: vars
@@ -59,7 +61,7 @@ jobs:
           repository: infralight/helm-values
           path: tmp/helm-values
           ref: master
-          token: ${{ secrets.GLOBAL_PAT }}
+          token: ${{ secrets.pat }}
       - name: "UPDATE IMAGE TAG"
         if: ${{ env.NEW_APP_NAME }}
         run: |
