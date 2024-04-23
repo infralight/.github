@@ -31,7 +31,7 @@ jobs:
   argocd:
     environment: ${{ inputs.environment }}
     name: "Update image tag and sync changes on cluster."
-    runs-on: [self-hosted, "${{ inputs.environment }}"]
+    runs-on: [self-hosted, "prod"]
     steps:
       - name: "[ArgoCD]: set variables"
         id: vars
