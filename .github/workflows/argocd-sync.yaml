@@ -70,6 +70,7 @@ jobs:
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app sync "${{ env.APP_NAME }}"
+          options: --retry-limit 30 --retry-backoff-duration 10s 
       - name: "[ArgoCD]: wait for deploy to complete"
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
