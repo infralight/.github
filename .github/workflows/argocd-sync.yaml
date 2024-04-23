@@ -30,7 +30,7 @@ on:
 jobs:
   argocd:
     environment: ${{ inputs.environment }}
-    name: "[ArgoCD]"
+    name: "Update image tag and sync changes on cluster."
     runs-on: [self-hosted, "${{ inputs.environment }}"]
     steps:
       - name: "[ArgoCD]: set variables"
