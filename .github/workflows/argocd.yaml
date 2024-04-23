@@ -35,7 +35,7 @@ jobs:
   argocd:
     environment: ${{ inputs.environment }}
     name: "[ArgoCD]"
-    runs-on: [self-hosted, "prod"]
+    runs-on: [self-hosted, "${{ inputs.environment }}"]
     steps:
       - name: "[ArgoCD]: set variables"
         id: vars
