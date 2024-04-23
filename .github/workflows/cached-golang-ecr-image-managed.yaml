@@ -35,6 +35,10 @@ on:
         type: boolean
         required: false
         default: false
+      gitleaks:
+        type: boolean
+        required: false
+        default: false
       custom-tests:
         type: boolean
         required: false
@@ -61,6 +65,9 @@ on:
         required: false
         default: false
       run:
+        required: false
+        type: string
+      cache-id:
         required: false
         type: string
     secrets:
