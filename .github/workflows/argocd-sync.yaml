@@ -61,6 +61,7 @@ jobs:
           cwd: 'tmp/helm-values'
           message: ${{ env.APP_NAME }} image updated to ${{ env.TAG }}'
           pull: '--rebase --autostash'
+          push: 'origin --force'
       - name: "[ArgoCD]: trigger refresh"
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
