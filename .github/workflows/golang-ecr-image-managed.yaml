@@ -56,6 +56,10 @@ on:
         type: string
         default: 'dev'
         required: false
+      cluster:
+        type: string
+        default: 'env1'
+        required: false        
       latest:
         type: boolean
         required: false
