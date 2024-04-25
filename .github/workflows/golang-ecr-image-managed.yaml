@@ -59,7 +59,7 @@ on:
       cluster:
         type: string
         default: 'env1'
-        required: false        
+        required: false
       latest:
         type: boolean
         required: false
