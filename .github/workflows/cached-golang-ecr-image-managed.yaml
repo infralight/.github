@@ -34,7 +34,7 @@ on:
       trivy-scan:
         type: boolean
         required: false
-        default: false
+        default: true
       gitleaks:
         type: boolean
         required: false
@@ -175,11 +175,16 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: docker.io/library/tempimage
-          format: 'table'
-          exit-code: '1'
+          format: 'sarif'
+          exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.sarif'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
       - name: "login ecr"
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
