@@ -181,15 +181,6 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           output: 'trivy-${{ inputs.app-name }}-results.json'
-      - name: Upload Trivy scan results to S3
-        uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --acl public-read --follow-symlinks --delete'
-        env:
-          AWS_S3_BUCKET: 'firefly-${{ inputs.environment }}-trivy-scans'
-          AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
-          AWS_REGION: ${{ secrets.CI_REGION }}
       - name: "login ecr"
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
