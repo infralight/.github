@@ -175,16 +175,21 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: docker.io/library/tempimage
-          format: 'sarif'
+          format: 'json'
           exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: 'trivy-results.sarif'
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+          output: 'trivy-${{ inputs.app-name }}-results.json'
+      - name: Upload Trivy scan results to S3
+        uses: jakejarvis/s3-sync-action@master
         with:
-          sarif_file: 'trivy-results.sarif'
+          args: --acl public-read --follow-symlinks --delete'
+        env:
+          AWS_S3_BUCKET: 'firefly-trivy-scans'
+          AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
+          AWS_REGION: ${{ secrets.CI_REGION }}
       - name: "login ecr"
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
