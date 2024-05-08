@@ -183,8 +183,6 @@ jobs:
           output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
       - name: Upload Trivy scan results to S3
         uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --include='trivy*'  
         env:
           SOURCE_DIR: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
           AWS_S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
