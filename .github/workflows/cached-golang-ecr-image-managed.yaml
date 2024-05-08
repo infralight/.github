@@ -184,6 +184,7 @@ jobs:
       - name: Upload Trivy scan results to S3
         uses: jakejarvis/s3-sync-action@master
         env:
+          SOURCE: ./env3-trivy-cerebro-results.json
           AWS_S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
           AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
