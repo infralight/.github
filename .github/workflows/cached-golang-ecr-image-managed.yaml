@@ -180,7 +180,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: 'trivy-${{ inputs.app-name }}-results.json'
+          output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
       - name: Upload Trivy scan results to S3
         uses: jakejarvis/s3-sync-action@master
         with:
