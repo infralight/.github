@@ -34,7 +34,7 @@ on:
       trivy-scan:
         type: boolean
         required: false
-        default: false
+        default: true
       custom-tests:
         type: boolean
         required: false
