@@ -101,6 +101,7 @@ jobs:
       - run: make ${{ inputs.test-name == '' && format('test-{0}', inputs.app-name) || inputs.test-name }}
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
+    needs: tests
     environment: ${{ inputs.environment }}
     runs-on: 'ubuntu-latest'
     env:
