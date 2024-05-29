@@ -27,6 +27,10 @@ on:
         type: boolean
         required: false
         default: false
+      test-name:
+        type: string
+        required: false
+        default: ''        
       ecr-prefix:
         type: string
         required: false
@@ -91,60 +95,74 @@ on:
 jobs:
   tests:
     name: Run Tests
-    runs-on: 'ubuntu-latest'
+    # runs-on: [self-hosted, "${{ inputs.environment }}"]
+    runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/setup-go@v2
-        with:
-          go-version: ${{ inputs.go-version }}
       - id: go-cache-paths
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Go Build Cache
-        uses: actions/cache@v3
+      - uses: actions/setup-go@v5
         with:
-          path: |
-            ${{ steps.go-cache-paths.outputs.go-build }}
-            ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-${{ inputs.app-name }}-test-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.app-name }}/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ inputs.app-name }}-test
-            ${{ runner.os }}-${{ inputs.app-name }}-build
-            ${{ runner.os }}-full-test
+          go-version: ${{ inputs.go-version }}
+          cache: false
+            
+      # Cache go build cache, used to speedup go test
+      - name: Go Build Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+      
+      # Cache go mod cache, used to speedup builds
+      - name: Go Mod Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+          
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
-      - run: make test-${{ inputs.app-name }}
+      - run: make ${{ inputs.test-name == '' && format('test-{0}', inputs.app-name) || inputs.test-name }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
   build-push-ecr:
     needs: tests
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
     steps:
       - uses: actions/checkout@v2
       - name: "Set up Go"
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
+          cache: false
       - id: go-cache-paths
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+      # Cache go build cache, used to speedup go test
       - name: Go Build Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v2
         with:
-          path: |
-            ${{ steps.go-cache-paths.outputs.go-build }}
-            ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-${{ inputs.app-name }}-build-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.app-name }}/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ inputs.app-name }}-build
+          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Cache go mod cache, used to speedup builds
+      - name: Go Mod Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+          
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
@@ -159,15 +177,32 @@ jobs:
           aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
           aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
           aws-region: ${{ secrets.CI_REGION }}
-      - name: "Build"
+
+      - name: inject cache into docker
+        uses: reproducible-containers/buildkit-cache-dance@v3.1.0
+        with:
+          cache-map: |
+            {
+              "${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}": "${{ steps.go-cache-paths.outputs.go-mod }}",
+              "${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}": "${{ steps.go-cache-paths.outputs.go-build }}"
+            }
+          # skip-extraction: ${{ steps.cache.outputs.cache-hit }}
+      - name: Build and push
+        if: ${{ env.HAVE_RUN_CMD == 'false' }}      
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          build-args: |
+            ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }},ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }},GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }},WORK_DIR=${GITHUB_WORKSPACE}'
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: docker.io/library/tempimage
+          file: applications/fetcher.Dockerfile
+      - name: "Dockerfile & Build"
+        if: ${{ env.HAVE_RUN_CMD == 'false' }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
-          make ci-build-${{ inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
-      - name: "Dockerfile"
-        if: ${{ env.HAVE_RUN_CMD == 'false' }}
-        run: |
-          make ci-docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
