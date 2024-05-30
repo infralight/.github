@@ -97,7 +97,7 @@ jobs:
     name: Run Tests
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
       - id: go-cache-paths
