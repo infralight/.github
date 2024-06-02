@@ -180,8 +180,8 @@ jobs:
         with:
           cache-map: |
             {
-              ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}: ${{ steps.go-cache-paths.outputs.go-mod }},
-              ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}: ${{ steps.go-cache-paths.outputs.go-build }}
+              "${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}": "${{ steps.go-cache-paths.outputs.go-mod }}",
+              "${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}": "${{ steps.go-cache-paths.outputs.go-build }}"
             }
           # skip-extraction: ${{ steps.cache.outputs.cache-hit }}
       
