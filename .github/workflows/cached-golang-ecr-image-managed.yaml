@@ -95,7 +95,7 @@ on:
 jobs:
   tests:
     name: Run Tests
-    runs-on: 'ubuntu-latest'
+    runs-on: [self-hosted, "${{ inputs.environment }}"]
     steps:
       - id: go-cache-paths
         run: |
@@ -131,7 +131,7 @@ jobs:
     needs: tests
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: 'ubuntu-latest'
+    runs-on: [self-hosted, "${{ inputs.environment }}"]
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
