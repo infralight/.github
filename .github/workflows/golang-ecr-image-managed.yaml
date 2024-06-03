@@ -85,7 +85,7 @@ jobs:
   tests:
     if: inputs.run-tests == true
     name: Run Tests
-    runs-on: 'ubuntu-latest'
+    runs-on: [self-hosted, "dev"]
     steps:
       - uses: actions/setup-go@v2
         with:
