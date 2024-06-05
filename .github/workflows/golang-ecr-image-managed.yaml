@@ -86,6 +86,8 @@ jobs:
     if: inputs.run-tests == true
     name: Run Tests
     runs-on: [self-hosted, "dev"]
+    env:
+      TESTCONTAINERS_RYUK_DISABLED: true
     steps:
       - uses: actions/setup-go@v2
         with:
