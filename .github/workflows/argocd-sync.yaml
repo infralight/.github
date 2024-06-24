@@ -29,7 +29,7 @@ on:
         required: true
 jobs:
   argocd:
-    environment: ${{ inputs.environment }}
+    environment:  ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}
     name: "Update image tag and sync changes on cluster."
     runs-on: [self-hosted, "prod"]
     steps:
