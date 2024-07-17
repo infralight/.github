@@ -20,6 +20,7 @@ on:
         default: ''
       environment:
         type: string
+        default: 'dev'
         required: false
     secrets:
       CI_SLACK_WEBHOOK:
