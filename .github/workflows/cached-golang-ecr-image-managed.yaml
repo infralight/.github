@@ -68,10 +68,6 @@ on:
         type: boolean
         required: false
         default: false
-      pre-run:
-        type: string
-        required: false
-        default: ""
       run:
         required: false
         type: string
@@ -163,9 +159,6 @@ jobs:
           aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
           aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
           aws-region: ${{ secrets.CI_REGION }}
-      - name: "Pre-Run"
-        if: ${{ inputs.pre-run != '' }}
-        run: ${{ inputs.pre-run }}
       - name: "Build"
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
