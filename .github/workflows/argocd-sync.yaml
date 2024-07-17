@@ -5,6 +5,10 @@ on:
       appName:
         type: string
         required: true
+      appNamePostfix:
+        type: string
+        default: ''
+        required: false
       branch:
         type: string
         required: true
@@ -29,14 +33,18 @@ on:
         required: true
 jobs:
   argocd:
-    environment:  ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}
+    environment: ${{ inputs.environment }}
     name: "Update image tag and sync changes on cluster."
     runs-on: [self-hosted, "prod"]
     steps:
       - name: "[ArgoCD]: set variables"
         id: vars
         run: |
-          echo "APP_NAME=${{ format('{0}-{1}-{2}', inputs.environment, inputs.cluster, inputs.appName) }}" >> $GITHUB_ENV
+          if [[ "${{ inputs.appNamePostfix }}" != "" ]]; then
+            echo "APP_NAME=${{ format('{0}-{1}-{2}-{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNamePostfix) }}" >> $GITHUB_ENV
+          else
+            echo "APP_NAME=${{ format('{0}-{1}-{2}', inputs.environment, inputs.cluster, inputs.appName) }}" >> $GITHUB_ENV
+          fi
           echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD }}" >> $GITHUB_ENV
           echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
@@ -50,7 +58,7 @@ jobs:
         with:
           repository: infralight/helm-values
           path: tmp/helm-values
-          ref: master
+          ref: main
           token: ${{ secrets.CI_PAT }}
       - name: "UPDATE IMAGE TAG"
         uses: mikefarah/yq@master
