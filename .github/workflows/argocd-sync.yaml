@@ -75,7 +75,7 @@ jobs:
       - name: "UPDATE IMAGE TAG"
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '${{ inputs.tagKey }} = "${{ inputs.fetcherTag && format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.appName) || inputs.tagValue }}${{ env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
+          cmd: yq -i '${{ inputs.tagKey }} = "${{ inputs.fetcherTag && format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.appName) || inputs.tagValue }}${{ env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNamePostfix }}.yaml
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
