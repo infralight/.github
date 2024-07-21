@@ -12,7 +12,7 @@ on:
       cfname:
         type: string
         default: ''
-        requried: false
+        required: false
       branch:
         type: string
         required: true
