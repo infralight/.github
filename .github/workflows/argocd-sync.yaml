@@ -64,6 +64,13 @@ jobs:
         uses: mikefarah/yq@master
         with:
           cmd: yq -i '.base.tag = "${{ env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
+      - name: "Conditionally update config map"
+        run: |
+          if [ "${{ inputs.appName }}" == "flywheel-gcp-consumer" ]; then
+            yq -i '(.configMaps[] | select(.name == "firefly-kube-scheduler") | .FETCHER_GCP_FETCHER_IMAGE) = "094724549126.dkr.ecr.us-east-1.amazonaws.com/flywheel-gcp-consumer:${{ env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
+          else
+            echo "Skipping config map update for appName: ${{ inputs.appName }}"
+          fi
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
