@@ -53,7 +53,7 @@ jobs:
         id: vars
         run: |
           if [[ "${{ inputs.appNamePostfix }}" != "" ]]; then
-            echo "APP_NAME=${{ format('{0}-{1}-{2}-{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNamePostfix) }}" >> $GITHUB_ENV
+            echo "APP_NAME=${{ format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNamePostfix) }}" >> $GITHUB_ENV
           else
             echo "APP_NAME=${{ format('{0}-{1}-{2}', inputs.environment, inputs.cluster, inputs.appName) }}" >> $GITHUB_ENV
           fi
