@@ -33,6 +33,10 @@ on:
     secrets:
       CI_ARGOCD:
         required: true
+      CI_ACCOUNT_ID:
+        required: true
+      CI_REGION:
+        required: true
       CI_SLACK_WEBHOOK:
         required: true
       CI_ARGOCD_SERVER:
