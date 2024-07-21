@@ -22,6 +22,14 @@ on:
         type: string
         default: '500'
         required: false
+      tagKey:
+        type: string
+        default: '.base.tag'
+        required: false
+      tagValue:
+        type: string
+        default: ''
+        required: false        
     secrets:
       CI_ARGOCD:
         required: true
@@ -63,7 +71,7 @@ jobs:
       - name: "UPDATE IMAGE TAG"
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.base.tag = "${{ env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
+          cmd: yq -i '${{ inputs.tagKey }} = ${{ inputs.tagValue }}${{ env.TAG }}' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
