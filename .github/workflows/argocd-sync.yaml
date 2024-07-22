@@ -35,7 +35,7 @@ on:
         default: false
         required: false
     secrets:
-      CI_ARGOCD:
+      CI_ARGOCD_TOKEN:
         required: true
       CI_ACCOUNT_ID:
         required: true
