@@ -3,10 +3,10 @@ name: Reusable Golang Build ECR Image
 on:
   workflow_call:
     inputs:
-      skip-tests:
+      run-tests:
         type: boolean
         required: false
-        default: false
+        default: true
         description: "Whether to skip running unit tests"
       ecr-prefix:
         type: string
@@ -94,7 +94,7 @@ jobs:
         uses: unfor19/install-aws-cli-action@v1
 
       - name: Run unit tests
-        if: ${{ inputs.skip-tests != true }}
+        if: ${{ inputs.run-tests }}
         #run: make ${{ format('test-{0}', inputs.app-name) }}
         run: make test
 
