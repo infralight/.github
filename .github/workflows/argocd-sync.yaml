@@ -9,6 +9,10 @@ on:
         type: string
         default: ''
         required: false
+      cfname:
+        type: string
+        default: ''
+        required: false
       branch:
         type: string
         required: true
@@ -22,8 +26,20 @@ on:
         type: string
         default: '500'
         required: false
+      tagKey:
+        type: string
+        default: '.base.tag'
+        required: false
+      fetcherTag:
+        type: boolean
+        default: false
+        required: false
     secrets:
-      CI_ARGOCD:
+      CI_ARGOCD_TOKEN:
+        required: true
+      CI_ACCOUNT_ID:
+        required: true
+      CI_REGION:
         required: true
       CI_SLACK_WEBHOOK:
         required: true
@@ -41,7 +57,7 @@ jobs:
         id: vars
         run: |
           if [[ "${{ inputs.appNamePostfix }}" != "" ]]; then
-            echo "APP_NAME=${{ format('{0}-{1}-{2}-{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNamePostfix) }}" >> $GITHUB_ENV
+            echo "APP_NAME=${{ format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNamePostfix) }}" >> $GITHUB_ENV
           else
             echo "APP_NAME=${{ format('{0}-{1}-{2}', inputs.environment, inputs.cluster, inputs.appName) }}" >> $GITHUB_ENV
           fi
@@ -63,7 +79,7 @@ jobs:
       - name: "UPDATE IMAGE TAG"
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.base.tag = "${{ env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
+          cmd: yq -i '${{ inputs.tagKey }} = "${{ inputs.fetcherTag && format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.cfname) || inputs.tagValue }}${{ env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNamePostfix }}.yaml
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
