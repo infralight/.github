@@ -43,20 +43,20 @@ on:
         required: true
 jobs:
   argocd:
-    environment: \\$\\{{ inputs.environment }}
+    environment: ${{ inputs.environment }}
     name: "Update image tag and sync changes on cluster."
     runs-on: [self-hosted, "prod"]
     steps:
       - name: "[ArgoCD]: set variables"
         id: vars
         run: |
-          echo "APP_NAME=\\$\\{{ format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNameSuffix) }}" >> $GITHUB_ENV
-          echo "ARGOCD_AUTH_TOKEN=\\$\\{{ secrets.CI_ARGOCD_TOKEN }}" >> $GITHUB_ENV
-          echo "ARGOCD_SERVER=\\$\\{{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
+          echo "APP_NAME=${{ format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNameSuffix) }}" >> $GITHUB_ENV
+          echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD_TOKEN }}" >> $GITHUB_ENV
+          echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
-          echo "TAG=\\$\\{GITHUB_SHA::6}" >> $GITHUB_ENV
+          echo "TAG=${GITHUB_SHA::6}" >> $GITHUB_ENV
           echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
-          if [[ "\\$\\{{ inputs.environment }}" == "dev" ]]; then
+          if [[ "${{ inputs.environment }}" == "dev" ]]; then
             echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
           fi
       - name: Clone helm-values repository
@@ -65,32 +65,32 @@ jobs:
           repository: infralight/helm-values
           path: tmp/helm-values
           ref: main
-          token: \\$\\{{ secrets.CI_PAT }}
+          token: ${{ secrets.CI_PAT }}
       - name: "UPDATE IMAGE TAG"
         uses: mikefarah/yq@master
         with:
-        cmd: yq -i '\\$\\{{ inputs.tagKey }} = "\\$\\{{ inputs.is_cloudfetcher && format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.appName) || inputs.tagValue }}"' tmp/helm-values/\\$\\{{ inputs.environment }}/\\$\\{{ inputs.cluster }}/\\$\\{{ inputs.appName }}\\$\\{{ inputs.appNameSuffix }}.yaml
+        cmd: yq -i '${{ inputs.tagKey }} = "${{ inputs.is_cloudfetcher && format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.appName) || inputs.tagValue }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
-          message: \\$\\{{ env.APP_NAME }} image updated to \\$\\{{ env.TAG }}'
+          message: ${{ env.APP_NAME }} image updated to ${{ env.TAG }}'
           pull: '--rebase --autostash'
           push: 'origin --force'
       - name: "[ArgoCD]: trigger sync"
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
-          command: app sync "\\$\\{{ env.APP_NAME }}"
+          command: app sync "${{ env.APP_NAME }}"
           options: --retry-limit 30 --retry-backoff-duration 10s
       - name: "[ArgoCD]: wait for deploy to complete"
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
-          command: app wait \\$\\{{ env.APP_NAME }} --timeout \\$\\{{ inputs.timeout }}
+          command: app wait ${{ env.APP_NAME }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_ICON: https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png
-          SLACK_COLOR: \\$\\{{ job.status }}
-          SLACK_MESSAGE: "\\$\\{{ inputs.appName }} application has been successfully deployed from \\$\\{{ inputs.branch }} to \\$\\{{ inputs.environment }}-\\$\\{{ inputs.cluster}} cluster, status: \\$\\{{ job.status }}"
-          SLACK_TITLE: "**\\$\\{{ inputs.environment }}**: \\$\\{{ env.APP_NAME }} ArgoCD deployment notification, status: \\$\\{{ job.status }}"
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_MESSAGE: "${{ inputs.appName }} application has been successfully deployed from ${{ inputs.branch }} to ${{ inputs.environment }}-${{ inputs.cluster}} cluster, status: ${{ job.status }}"
+          SLACK_TITLE: "**${{ inputs.environment }}**: ${{ env.APP_NAME }} ArgoCD deployment notification, status: ${{ job.status }}"
           SLACK_USERNAME: cicdBot
-          SLACK_WEBHOOK: \\$\\{{ secrets.CI_SLACK_WEBHOOK }}
+          SLACK_WEBHOOK: ${{ secrets.CI_SLACK_WEBHOOK }}
