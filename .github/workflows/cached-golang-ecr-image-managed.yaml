@@ -27,6 +27,10 @@ on:
         type: boolean
         required: false
         default: false
+      test-name:
+        type: string
+        required: false
+        default: ''
       ecr-prefix:
         type: string
         required: false
@@ -115,7 +119,7 @@ jobs:
             ${{ runner.os }}-full-test
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
-      - run: make test-${{ inputs.app-name }}
+      - run: make ${{ inputs.test-name != "" && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
   build-push-ecr:
