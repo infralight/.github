@@ -13,7 +13,7 @@ on:
         type: string
         default: '.base.tag'
         required: false
-      is_cloudfetcher:
+      isCloudfetchers:
         type: boolean
         default: false
         required: false
@@ -73,7 +73,7 @@ jobs:
       - name: "UPDATE IMAGE TAG"
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '${{ inputs.tagKey }} = "${{ inputs.is_cloudfetcher && format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.appName) || inputs.tagValue }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+          cmd: yq -i '${{ inputs.tagKey }} = "${{ inputs.isCloudfetchers && format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.appName) || inputs.tagValue }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
