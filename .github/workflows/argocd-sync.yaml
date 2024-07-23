@@ -24,7 +24,7 @@ on:
         required: false
     secrets:
       CI_ARGOCD:
-        required: true
+        required: false
       CI_ARGOCD_TOKEN:
         required: true
       CI_SLACK_WEBHOOK:
