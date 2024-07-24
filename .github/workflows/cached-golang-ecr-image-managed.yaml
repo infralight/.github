@@ -203,7 +203,7 @@ jobs:
         run: |
           COMMAND=$(make --dry-run ci-docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }})
           COMMAND=$(echo $COMMAND | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
-          COMMAND=$(echo $COMMAND | sed -E 's/docker\s+build/docker build \-\-platform\=linux\/arm64/ig')
+          COMMAND=$(echo $COMMAND | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
           echo $COMMAND
           echo $COMMAND | bash
 
