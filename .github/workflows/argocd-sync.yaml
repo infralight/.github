@@ -9,11 +9,11 @@ on:
         type: string
         default: ''
         required: false
-      tagKey:
+      fetcherName:
         type: string
-        default: '.base.tag'
+        default: ''
         required: false
-      isCloudfetchers:
+      isCloudfetcher:
         type: boolean
         default: false
         required: false
@@ -32,9 +32,9 @@ on:
         required: false
     secrets:
       CI_ACCOUNT_ID:
-        required: true
+        required: false
       CI_REGION:
-        required: true
+        required: false
       CI_ARGOCD:
         required: true
       CI_ARGOCD_TOKEN:
@@ -51,12 +51,17 @@ jobs:
     name: "Update image tag and sync changes on cluster."
     runs-on: [self-hosted, "prod"]
     steps:
+      - id: string
+        uses: ASzc/change-string-case-action@v6
+        with:
+          string: ${{ inputs.fetcherName }}
       - name: "[ArgoCD]: set variables"
         id: vars
         run: |
           echo "APP_NAME=${{ format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNameSuffix) }}" >> $GITHUB_ENV
           echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD_TOKEN }}" >> $GITHUB_ENV
           echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
+          echo "FETCHER_NAME=${{ steps.string.outputs.uppercase }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
           echo "TAG=${GITHUB_SHA::6}" >> $GITHUB_ENV
           echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
@@ -73,7 +78,7 @@ jobs:
       - name: "UPDATE IMAGE TAG"
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '${{ inputs.tagKey }} = "${{ inputs.isCloudfetchers && format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.appName) || inputs.tagValue }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+        cmd: yq -i '${{ inputs.isCloudfetcher && format('.base.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || '.base.tag' }} = "${{ inputs.isCloudfetcher && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName) || inputs.tagValue }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
