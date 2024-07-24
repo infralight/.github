@@ -23,10 +23,14 @@ on:
         default: '500'
         required: false
     secrets:
+      CI_ACCOUNT_ID:
+        required: false
+      CI_REGION:
+        required: false
       CI_ARGOCD:
-        required: true
+        required: false
       CI_ARGOCD_TOKEN:
-        required: true
+        required: false
       CI_SLACK_WEBHOOK:
         required: true
       CI_ARGOCD_SERVER:
