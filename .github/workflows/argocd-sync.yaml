@@ -75,18 +75,18 @@ jobs:
       - name: "[ArgoCD]: trigger sync"
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
-          command: app sync "${{ env.APP_NAME }}"
+          command: app sync "${{ format('{0}-{1}-{2}', inputs.environment, inputs.cluster, inputs.appName) }}"
           options: --retry-limit 30 --retry-backoff-duration 10s 
       - name: "[ArgoCD]: wait for deploy to complete"
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
-          command: app wait ${{ env.APP_NAME }} --timeout ${{ inputs.timeout }}
+          command: app wait ${{ format('{0}-{1}-{2}', inputs.environment, inputs.cluster, inputs.appName) }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_ICON: https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png
           SLACK_COLOR: ${{ job.status }}
           SLACK_MESSAGE: "${{ inputs.appName }} application has been successfully deployed from ${{ inputs.branch }} to ${{ inputs.environment }}-${{ inputs.cluster}} cluster, status: ${{ job.status }}"
-          SLACK_TITLE: "**${{ inputs.environment }}**: ${{ env.APP_NAME }} ArgoCD deployment notification, status: ${{ job.status }}"
+          SLACK_TITLE: "**${{ inputs.environment }}**: ${{ format('{0}-{1}-{2}', inputs.environment, inputs.cluster, inputs.appName) }} ArgoCD deployment notification, status: ${{ job.status }}"
           SLACK_USERNAME: cicdBot
           SLACK_WEBHOOK: ${{ secrets.CI_SLACK_WEBHOOK }}
