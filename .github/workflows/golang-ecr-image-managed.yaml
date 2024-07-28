@@ -50,6 +50,9 @@ on:
       app-name:
         type: string
         required: true
+      ecr-name:
+        type: string
+        required: false
       fetcher-name:
         type: string
         required: false
