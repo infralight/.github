@@ -3,6 +3,10 @@ name: Reusable NodeJS Build ECR Image
 on:
   workflow_call:
     inputs:
+      arm64:
+        type: boolean
+        required: false
+        default: false
       go-version:
         default: '1.18.2'
         required: false
