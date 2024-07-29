@@ -7,19 +7,7 @@ on:
         type: boolean
         required: false
         default: false
-      go-version:
-        default: '1.18.2'
-        required: false
-        type: string
       node-version:
-        default: '1.18.2'
-        required: false
-        type: string
-      react-version:
-        default: '1.18.2'
-        required: false
-        type: string
-      python-version:
         default: '1.18.2'
         required: false
         type: string
@@ -88,7 +76,7 @@ jobs:
   tests:
     if: inputs.run-tests == true
     runs-on: 'ubuntu-latest'
-    name: "Run Golang Tests"
+    name: "Run Tests"
     steps:
       - run: |
           make test-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
@@ -103,10 +91,6 @@ jobs:
       tag: ${{ steps.build.outputs.tag }}
     steps:
       - uses: actions/checkout@v2
-      - name: "Set up Go"
-        uses: actions/setup-go@v2
-        with:
-          go-version: ${{ inputs.go-version }}
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
