@@ -79,7 +79,7 @@ jobs:
     name: "Run Tests"
     steps:
       - run: |
-          make test-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
+          make test-${{ inputs.app-name }}
   build:
     environment: ${{ inputs.environment }}
     name: "Build & Push ECR Docker Image "
@@ -90,7 +90,7 @@ jobs:
     outputs:
       tag: ${{ steps.build.outputs.tag }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2§
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
