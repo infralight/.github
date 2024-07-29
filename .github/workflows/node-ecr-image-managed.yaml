@@ -90,7 +90,7 @@ jobs:
     outputs:
       tag: ${{ steps.build.outputs.tag }}
     steps:
-      - uses: actions/checkout@v2§
+      - uses: actions/checkout@v2
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
