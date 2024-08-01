@@ -93,6 +93,7 @@ on:
         type: string
       cache-id:
         required: false
+        default: ""
         type: string
     secrets:
       GLOBAL_PAT_USERNAME:
@@ -128,10 +129,10 @@ jobs:
           path: |
             ${{ steps.go-cache-paths.outputs.go-build }}
             ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-${{ inputs.app-name }}-test-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.app-name }}/go.sum') }}
+          key: ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-test-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-${{ inputs.app-name }}-test
-            ${{ runner.os }}-${{ inputs.app-name }}-build
+            ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-test
+            ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-build
             ${{ runner.os }}-full-test
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
@@ -162,9 +163,9 @@ jobs:
           path: |
             ${{ steps.go-cache-paths.outputs.go-build }}
             ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-${{ inputs.app-name }}-build-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.app-name }}/go.sum') }}
+          key: ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-build-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-${{ inputs.app-name }}-build
+            ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-build
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
