@@ -9,6 +9,10 @@ on:
         type: string
         default: ''
         required: false
+      fetcherName:
+        type: string
+        default: ''
+        required: false
       branch:
         type: string
         required: true
@@ -30,7 +34,7 @@ on:
       CI_ARGOCD:
         required: false
       CI_ARGOCD_TOKEN:
-        required: false
+        required: true
       CI_SLACK_WEBHOOK:
         required: true
       CI_ARGOCD_SERVER:
@@ -43,12 +47,17 @@ jobs:
     name: "Update image tag and sync changes on cluster."
     runs-on: [self-hosted, "prod"]
     steps:
+      - id: string
+        uses: ASzc/change-string-case-action@v6
+        with:
+          string: ${{ inputs.fetcherName }}
       - name: "[ArgoCD]: set variables"
         id: vars
         run: |
           echo "APP_NAME=${{ format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNameSuffix) }}" >> $GITHUB_ENV
           echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD_TOKEN }}" >> $GITHUB_ENV
           echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
+          echo "FETCHER_NAME=${{ steps.string.outputs.uppercase }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
           echo "TAG=${GITHUB_SHA::6}" >> $GITHUB_ENV
           echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
@@ -65,7 +74,7 @@ jobs:
       - name: "UPDATE IMAGE TAG"
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.base.tag = "${{ env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+          cmd: yq -i '${{ inputs.fetcherName != '' && format('.base.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || '.base.tag' }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
@@ -76,7 +85,7 @@ jobs:
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
           command: app sync "${{ env.APP_NAME }}"
-          options: --retry-limit 30 --retry-backoff-duration 10s 
+          options: --retry-limit 30 --retry-backoff-duration 10s
       - name: "[ArgoCD]: wait for deploy to complete"
         uses: clowdhaus/argo-cd-action/@v2.0.0
         with:
