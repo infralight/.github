@@ -209,16 +209,16 @@ jobs:
           if [[ "$COMMAND" != *"arm64"* ]]; then
               COMMAND=$(echo $COMMAND | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
           fi
-          echo $COMMAND
-          echo $COMMAND | bash
+          echo "$COMMAND"
+          echo "$COMMAND" | bash
       - name: Build Docker Image [arm64]
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
           COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }})
           COMMAND=$(echo $COMMAND | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
           COMMAND=$(echo $COMMAND | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
-          echo $COMMAND
-          echo $COMMAND | bash
+          echo "$COMMAND"
+          echo "$COMMAND" | bash
 
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
