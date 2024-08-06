@@ -204,14 +204,17 @@ jobs:
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
+      - name: Install ARM64 toolchain
+        if: ${{ inputs.arm64 }}
+        run: sudo apt-get install gcc-aarch64-linux-gnu
       - name: Build Go Binary [arm64]
         if: ${{ inputs.arm64 }}
         env: 
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
           COMMAND=$(make --dry-run ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE})
-          COMMAND=$(echo "$COMMAND" | sed 's/amd64/arm64/ig')
-          if [[ "$COMMAND" != *"arm64"* ]]; then
+          COMMAND=$(echo "$COMMAND" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
+          if [[ "$COMMAND" != *"GOARCH\=arm64"* ]]; then
               COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
           fi
           echo "$COMMAND"
