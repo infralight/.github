@@ -204,18 +204,6 @@ jobs:
       #   uses: docker/setup-qemu-action@v2
       #   with:
       #     platforms: "arm64"
-      - name: Install ARM64 toolchain
-        if: ${{ inputs.arm64 }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgit2-dev:arm64 \
-            libhttp-parser-dev:arm64 \
-            libssh2-1-dev:arm64 \
-            libssl-dev:arm64 \
-            libcrypto++-dev:arm64 \
-            libpcre2-dev:arm64 \
-            zlib1g-dev:arm64
       - name: Build Go Binary [arm64]
         if: ${{ inputs.arm64 }}
         env: 
