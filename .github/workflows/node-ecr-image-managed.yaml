@@ -102,6 +102,11 @@ jobs:
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
           echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
+      - name: Set up QEMU
+        if: ${{ inputs.arm64 }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "arm64"
       - name: Build Docker Image [arm64]
         id: build-arm64
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
