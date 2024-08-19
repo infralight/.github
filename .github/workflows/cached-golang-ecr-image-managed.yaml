@@ -84,6 +84,10 @@ on:
         type: boolean
         required: false
         default: false
+      self-hosted:
+        type: boolean
+        required: false
+        default: false
       pre-run:
         type: string
         required: false
