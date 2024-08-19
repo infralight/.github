@@ -116,7 +116,7 @@ on:
 jobs:
   tests:
     name: Run Tests
-    runs-on: ${{ inputs.self-hosted && [inputs.environment] || 'ubuntu-latest' }} 'ubuntu-latest'
+    runs-on: ${{ inputs.self-hosted && [format('{}',inputs.environment)] || 'ubuntu-latest' }} 'ubuntu-latest'
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -147,7 +147,7 @@ jobs:
     needs: tests
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: ${{ inputs.self-hosted && [inputs.environment] || 'ubuntu-latest' }} 'ubuntu-latest'
+    runs-on: ${{ inputs.self-hosted && [format('{}',inputs.environment)] || 'ubuntu-latest' }} 'ubuntu-latest'
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
