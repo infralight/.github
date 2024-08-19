@@ -72,6 +72,14 @@ jobs:
           ref: main
           token: ${{ secrets.CI_PAT }}
       - name: "UPDATE IMAGE TAG"
+        id: iacathon
+        if: (inputs.fetcherName == "iacathon-crawler")
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.base.tagsOverride.IACATHON_CONTAINER_IMAGE' = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/iacathon-crawler:{2}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+      - name: "UPDATE IMAGE TAG"
+        id: fetcher
+        if: (inputs.fetcherName != "iacathon-crawler")
         uses: mikefarah/yq@master
         with:
           cmd: yq -i '${{ inputs.fetcherName != '' && format('.base.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || '.base.tag' }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
