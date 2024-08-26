@@ -163,7 +163,6 @@ jobs:
           if ! grep -q "GOARCH\=arm64" "$DOCKERFILE"; then
               sed -i -E 's/go\s+build/GOARCH\=arm64 go build/' $DOCKERFILE
           fi
-          
           echo "$COMMAND"
           echo "$COMMAND" | bash
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
