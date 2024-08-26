@@ -43,7 +43,7 @@ on:
         required: true
 jobs:
   argocd:
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment == "dev" && inputs.cluster || inputs.environment }}
     name: "Update image tag and sync changes on cluster."
     runs-on: [self-hosted, "prod"]
     steps:
