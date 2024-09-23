@@ -162,7 +162,7 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
-      - name: Preflight Go Cache
+      - name: Go Cache Preflights
         id: go-cache-paths
         run: |
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
@@ -178,7 +178,7 @@ jobs:
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
             ${{ runner.os }}-go-mod-checksum-
-      - name: "[Build] configure git for private modules"
+      - name: Configure Git for Private Modules
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: Set output
@@ -192,20 +192,20 @@ jobs:
           aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
           aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
           aws-region: ${{ secrets.CI_REGION }}
-      - name: "Pre-Run"
+      - name: Pre-Run
         if: ${{ inputs.pre-run != '' }}
         run: ${{ inputs.pre-run }}
-      - name: Build Go Binary
+      - name: Go Build
         if: ${{ !inputs.arm64 }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
           make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
-      - name: "Generate ECR Name"
+      - name: Generate ECR Name
         id: ecr-name
         run: |
           echo "ECR_NAME=${{ inputs.ecr-name != '' && inputs.ecr-name || inputs.app-name }}" >> $GITHUB_ENV
-      - name: Build Docker Image
+      - name: Docker Build Image
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
         run: |
           make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }}
@@ -216,7 +216,7 @@ jobs:
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
-      - name: Build Go Binary [arm64]
+      - name: Go Build [arm64]
         if: ${{ inputs.arm64 }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
@@ -228,7 +228,7 @@ jobs:
           fi
           echo "$COMMAND"
           echo "$COMMAND" | bash
-      - name: Build Docker Image [arm64]
+      - name: Docker Build Image [arm64]
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
           COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }})
@@ -260,10 +260,10 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
-      - name: "login ecr"
+      - name: Login ECR
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
-      - name: "upload image"
+      - name: Docker Push to ECR
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
           docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
