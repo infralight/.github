@@ -116,7 +116,7 @@ on:
 jobs:
   tests:
     name: Run Tests
-    runs-on: 'ubuntu-latest'
+    runs-on: [self-hosted, '${{ inputs.environment }}']
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -147,7 +147,7 @@ jobs:
     needs: tests
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: 'ubuntu-latest'
+    runs-on: [self-hosted, '${{ inputs.environment }}']
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
@@ -210,7 +210,7 @@ jobs:
           platforms: "arm64"
       - name: Build Go Binary [arm64]
         if: ${{ inputs.arm64 }}
-        env: 
+        env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
           COMMAND=$(make --dry-run ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE})
