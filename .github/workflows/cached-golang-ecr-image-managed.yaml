@@ -221,6 +221,7 @@ jobs:
           echo "$COMMAND"
           echo "$COMMAND" | bash
       - name: Build Docker Image [arm64]
+        uses: docker/setup-buildx-action@v3
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
           COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }})
