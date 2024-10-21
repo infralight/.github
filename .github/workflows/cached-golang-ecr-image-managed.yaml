@@ -263,8 +263,7 @@ jobs:
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
-        #if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
-        if: false
+        if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: docker.io/library/tempimage
@@ -277,8 +276,7 @@ jobs:
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
       - name: Upload Trivy scan results to S3
-        #if: ${{ inputs.environment == 'dev' }}
-        if: false
+        if: ${{ inputs.environment == 'dev' }}
         uses: jakejarvis/s3-sync-action@master
         with:
           args: --exclude '*' --include ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
