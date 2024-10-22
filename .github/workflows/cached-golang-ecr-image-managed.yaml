@@ -3,10 +3,6 @@ name: Reusable Golang Build ECR Image
 on:
   workflow_call:
     inputs:
-      branch:
-        type: string
-        required: true
-        description: 'Branch name'
       arm64:
         type: boolean
         required: false
