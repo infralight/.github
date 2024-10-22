@@ -132,6 +132,7 @@ jobs:
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
           echo "cache-key=golang-${RUNNER_OS,,}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any=golang-${RUNNER_OS,,}-checksum-" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache@v4
@@ -141,7 +142,7 @@ jobs:
             ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
-            ${{ runner.os }}-go-mod-checksum-
+            ${{ steps.go-cache-paths.outputs.cache-key-any }}
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
@@ -175,6 +176,7 @@ jobs:
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
           echo "cache-key=golang-${RUNNER_OS,,}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any=golang-${RUNNER_OS,,}-checksum-" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache/restore@v4
@@ -184,7 +186,7 @@ jobs:
             ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
-            ${{ runner.os }}-go-mod-checksum-
+            ${{ steps.go-cache-paths.outputs.cache-key-any }}
       - name: Configure Git for Private Modules
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
