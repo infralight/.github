@@ -128,9 +128,10 @@ jobs:
       - name: Go Cache Preflights
         id: go-cache-paths
         run: |
+          RUNNER_OS=${{ runner.os }}
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          echo "cache-key=golang-${{ runner.os,, }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key=golang-${RUNNER_OS,,}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache@v4
@@ -170,9 +171,10 @@ jobs:
       - name: Go Cache Preflights
         id: go-cache-paths
         run: |
+          RUNNER_OS=${{ runner.os }}
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          echo "cache-key=golang-${{ runner.os,, }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key=golang-${RUNNER_OS,,}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache/restore@v4
