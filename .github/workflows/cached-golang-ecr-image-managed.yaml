@@ -243,7 +243,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
         env:
-          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
       - name: Upload Trivy scan results to S3
         if: ${{ inputs.environment == 'dev' }}
         uses: jakejarvis/s3-sync-action@master
