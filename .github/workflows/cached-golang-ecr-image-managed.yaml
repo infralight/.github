@@ -148,11 +148,11 @@ jobs:
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-      - name: Go Cache Download All [once]
+      - name: Go Cache Download & Build All
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         run: |
           go mod download
-          make ${{ format('ci-build-{0}', inputs.app-name) }}
+          make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
