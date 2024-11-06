@@ -141,8 +141,8 @@ jobs:
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
       - run: |
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
+          du -sh ${{ steps.go-cache-paths.outputs.go-build }} || echo "No cache found"
+          du -sh ${{ steps.go-cache-paths.outputs.go-mod }} || echo "No cache found"
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
