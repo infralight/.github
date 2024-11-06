@@ -140,6 +140,9 @@ jobs:
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
+      - run: |
+          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
@@ -154,7 +157,10 @@ jobs:
           for target in $(make -pRrq | grep -oP '^ci-build-[^ :]*' | sort -u); do
                 make "$target" || echo "Skipping failed target: $target"
           done
-          #go mod download
+          go mod download
+          go mod tidy
+          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
           #make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
