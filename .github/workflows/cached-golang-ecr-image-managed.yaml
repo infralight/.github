@@ -154,7 +154,12 @@ jobs:
       - name: Go Cache Download & Build All
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         run: |
-          make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
+          for target in $(make -pRrq | grep -oP '^ci-build-[^ :]*' | sort -u); do
+                make "$target" || echo "Skipping failed target: $target"
+          done
+          go mod download
+          go mod tidy
+          # make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
           du -sh ${{ steps.go-cache-paths.outputs.go-build }}
           du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
   build-push-ecr:
