@@ -135,7 +135,6 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ steps.go-cache-paths.outputs.go-build }}
             ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
@@ -187,7 +186,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ steps.go-cache-paths.outputs.go-build }}
             ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
