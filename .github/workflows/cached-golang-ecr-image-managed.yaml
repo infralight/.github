@@ -7,6 +7,10 @@ on:
         type: boolean
         required: false
         default: false
+      architecture:
+        type: string
+        required: false
+        default: 'amd64'
       go-version:
         default: '1.18.2'
         required: false
@@ -128,8 +132,8 @@ jobs:
           RUNNER_OS=${{ runner.os }}
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-checksum-" >> "$GITHUB_OUTPUT"
+          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecure }}-testing-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecure }}-testing-checksum-" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache@v4
@@ -148,20 +152,20 @@ jobs:
           go-version: ${{ inputs.go-version }}
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
-      # - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
+      - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-      - name: Go Cache Download & Build All
-        if: steps.go-cache-restore.outputs.cache-hit != 'true'
-        run: |
-          for target in $(make -pRrq | grep -oP '^ci-build-[^ :]*' | sort -u); do
-                make "$target" || echo "Skipping failed target: $target"
-          done
-          go mod download
-          go mod tidy
-          # make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
+  #     - name: Go Cache Download & Build All
+  #       if: steps.go-cache-restore.outputs.cache-hit != 'true'
+  #       run: |
+  #         for target in $(make -pRrq | grep -oP '^ci-build-[^ :]*' | sort -u); do
+  #               make "$target" || echo "Skipping failed target: $target"
+  #         done
+  #         go mod download
+  #         go mod tidy
+  #         # make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
+  #         du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+  #         du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
@@ -180,8 +184,9 @@ jobs:
           RUNNER_OS=${{ runner.os }}
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-checksum-" >> "$GITHUB_OUTPUT"
+          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any2=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache/restore@v4
@@ -192,6 +197,7 @@ jobs:
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
+            ${{ steps.go-cache-paths.outputs.cache-key-any2 }}
       - name: "Set up Go"
         uses: actions/setup-go@v2
         with:
