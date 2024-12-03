@@ -228,17 +228,10 @@ jobs:
         id: ecr-name
         run: |
           echo "ECR_NAME=${{ inputs.ecr-name != '' && inputs.ecr-name || inputs.app-name }}" >> $GITHUB_ENV
-      - name: Set Gitleaks File Path
-        run: |
-          if [[ "${{ inputs.environment }}" == "stag" || "${{ inputs.environment }}" == "prod" ]] && [[ "${{ inputs.environment }}" == "stag" ]]; then
-            echo "GITLEAKS_FILE_PATH=s3://firefly-${{ inputs.environment }}-gitleaks-configuration/${{ inputs.cluster }}/gitleaks.toml" >> $GITHUB_ENV
-          else
-            echo "GITLEAKS_FILE_PATH=s3://firefly-${{ inputs.environment || inputs.cluster }}-gitleaks-configuration/gitleaks.toml" >> $GITHUB_ENV
-          fi
       - name: Docker Build Image
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
         run: |
-          make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=${{ env.GITLEAKS_FILE_PATH }}
+          make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment == 'stag' && format('{0}-{1}-gitleaks-configuration', inputs.environment, inputs.cluster) || contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('{0}-gitleaks-configuration', inputs.environment) || format('{0}-gitleaks-configuration', inputs.cluster) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
       - name: Set up QEMU
         if: ${{ inputs.arm64 }}
@@ -260,12 +253,11 @@ jobs:
       - name: Docker Build Image [arm64]
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
-          COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=${{ env.GITLEAKS_FILE_PATH }})
+          COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment == 'stag' && format('{0}-{1}-gitleaks-configuration', inputs.environment, inputs.cluster) || contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('{0}-gitleaks-configuration', inputs.environment) || format('{0}-gitleaks-configuration', inputs.cluster) }})
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
           echo "$COMMAND"
           echo "$COMMAND" | bash
-
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
