@@ -155,14 +155,6 @@ jobs:
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-      - name: Set Gitleaks File Path
-        id: set-gitleaks-path
-        run: |
-          if [[ "${{ inputs.environment }}" == "stag" || "${{ inputs.environment }}" == "prod" ]] && [[ "${{ inputs.environment }}" == "stag" ]]; then
-            echo "GITLEAKS_FILE_PATH=s3://firefly-${{ inputs.environment }}-gitleaks-configuration/${{ inputs.cluster }}/gitleaks.toml" >> $GITHUB_ENV
-          else
-            echo "GITLEAKS_FILE_PATH=s3://firefly-${{ inputs.environment || inputs.cluster }}-gitleaks-configuration/gitleaks.toml" >> $GITHUB_ENV
-          fi
   #     - name: Go Cache Download & Build All
   #       if: steps.go-cache-restore.outputs.cache-hit != 'true'
   #       run: |
@@ -236,6 +228,13 @@ jobs:
         id: ecr-name
         run: |
           echo "ECR_NAME=${{ inputs.ecr-name != '' && inputs.ecr-name || inputs.app-name }}" >> $GITHUB_ENV
+      - name: Set Gitleaks File Path
+        run: |
+          if [[ "${{ inputs.environment }}" == "stag" || "${{ inputs.environment }}" == "prod" ]] && [[ "${{ inputs.environment }}" == "stag" ]]; then
+            echo "GITLEAKS_FILE_PATH=s3://firefly-${{ inputs.environment }}-gitleaks-configuration/${{ inputs.cluster }}/gitleaks.toml" >> $GITHUB_ENV
+          else
+            echo "GITLEAKS_FILE_PATH=s3://firefly-${{ inputs.environment || inputs.cluster }}-gitleaks-configuration/gitleaks.toml" >> $GITHUB_ENV
+          fi
       - name: Docker Build Image
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
         run: |
