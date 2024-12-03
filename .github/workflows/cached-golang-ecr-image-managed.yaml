@@ -155,6 +155,14 @@ jobs:
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+      - name: Set Gitleaks File Path
+        id: set-gitleaks-path
+        run: |
+          if [[ "${{ inputs.environment }}" == "stag" || "${{ inputs.environment }}" == "prod" ]] && [[ "${{ inputs.environment }}" == "stag" ]]; then
+            echo "GITLEAKS_FILE_PATH=s3://firefly-${{ inputs.environment }}-gitleaks-configuration/${{ inputs.cluster }}/gitleaks.toml" >> $GITHUB_ENV
+          else
+            echo "GITLEAKS_FILE_PATH=s3://firefly-${{ inputs.environment || inputs.cluster }}-gitleaks-configuration/gitleaks.toml" >> $GITHUB_ENV
+          fi
   #     - name: Go Cache Download & Build All
   #       if: steps.go-cache-restore.outputs.cache-hit != 'true'
   #       run: |
@@ -231,7 +239,7 @@ jobs:
       - name: Docker Build Image
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
         run: |
-          make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }}
+          make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=${{ env.GITLEAKS_FILE_PATH }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
       - name: Set up QEMU
         if: ${{ inputs.arm64 }}
@@ -253,7 +261,7 @@ jobs:
       - name: Docker Build Image [arm64]
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
-          COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }})
+          COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=${{ env.GITLEAKS_FILE_PATH }})
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
           echo "$COMMAND"
