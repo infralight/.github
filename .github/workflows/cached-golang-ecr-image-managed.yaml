@@ -167,7 +167,7 @@ jobs:
       - name: "Dockerfile"
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
-          make ci-docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment == 'stag' ? format('firefly-{0}-gitleaks-configuration/{1}/gitleaks.toml', inputs.environment, inputs.cluster) : format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment || inputs.cluster) }}
+          make ci-docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
