@@ -267,7 +267,8 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: docker.io/library/tempimage
-          format: 'json'
+          format: 'json:w
+          '
           exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
