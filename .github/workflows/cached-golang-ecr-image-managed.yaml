@@ -246,6 +246,7 @@ jobs:
         run: |
           COMMAND=$(make --dry-run ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }})
           COMMAND=$(echo "$COMMAND" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
+          COMMAND=$(echo "$COMMAND" | sed 's/linux\/amd64\/linux/arm64/ig')
           if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
               COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
           fi
