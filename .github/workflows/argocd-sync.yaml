@@ -76,7 +76,7 @@ jobs:
         if: ${{ inputs.appName == 'iac-ci-kics-worker' }}
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.tags = env.TAG' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
+          cmd: yq -i '.tag = "format('{0}', env.TAG}}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
       - name: "UPDATE IMAGE TAG"
         id: iacathon
         if: ${{ inputs.fetcherName == 'iacathon-crawler' }}
