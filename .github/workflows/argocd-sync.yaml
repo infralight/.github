@@ -72,6 +72,12 @@ jobs:
           ref: main
           token: ${{ secrets.CI_PAT }}
       - name: "UPDATE IMAGE TAG"
+        id: kics-worker
+        if: ${{ inputs.appName == 'iac-ci-kics-worker' }}
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.tags = env.TAG' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
+      - name: "UPDATE IMAGE TAG"
         id: iacathon
         if: ${{ inputs.fetcherName == 'iacathon-crawler' }}
         uses: mikefarah/yq@master
