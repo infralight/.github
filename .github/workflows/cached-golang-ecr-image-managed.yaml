@@ -116,7 +116,7 @@ on:
 jobs:
   tests:
     name: Run Tests
-    runs-on: 'ubuntu-22.04-arm'
+    runs-on: 'ubuntu-24.04-arm'
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -147,7 +147,7 @@ jobs:
     # needs: tests
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: 'ubuntu-22.04-arm'
+    runs-on: 'ubuntu-24.04-arm'
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
