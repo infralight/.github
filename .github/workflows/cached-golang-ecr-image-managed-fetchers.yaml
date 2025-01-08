@@ -1,0 +1,255 @@
+name: Reusable Golang Build ECR Image
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        default: '1.22.2'
+        required: false
+        type: string
+      node-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      react-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      python-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      custom:
+        type: boolean
+        required: false
+        default: false
+      run-tests:
+        type: boolean
+        required: false
+        default: false
+      test-name:
+        type: string
+        required: false
+        default: ''
+      ecr-prefix:
+        type: string
+        required: false
+        default: ''
+      trivy-scan:
+        type: boolean
+        required: false
+        default: true
+      gitleaks:
+        type: boolean
+        required: false
+        default: false
+      custom-tests:
+        type: boolean
+        required: false
+        default: false
+      cmd-tests:
+        type: string
+        required: false
+        default: "go test ./..."
+      app-name:
+        type: string
+        required: true
+      fetcher-name:
+        type: string
+        required: false
+        default: ''
+      ecr-name:
+        type: string
+        required: false
+        default: ''
+      branch:
+        type: string
+        required: true
+      event_name:
+        type: string
+        required: true
+      environment:
+        type: string
+        default: 'dev'
+        required: false
+      cluster:
+        type: string
+        default: 'env1'
+        required: false
+      latest:
+        type: boolean
+        required: false
+        default: false
+      self-hosted:
+        type: boolean
+        required: false
+        default: false
+      pre-run:
+        type: string
+        required: false
+        default: ""
+      run:
+        required: false
+        type: string
+      cache-id:
+        required: false
+        default: ""
+        type: string
+    secrets:
+      GLOBAL_PAT_USERNAME:
+        required: true
+      GLOBAL_PAT:
+        required: true
+      CI_AWS_CRED_KEY:
+        required: true
+      CI_AWS_CRED_SECRET:
+        required: true
+      CI_REGION:
+        required: true
+      CI_ACCOUNT_ID:
+        required: true
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: 'ubuntu-24.04-arm'
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=go-build::$(go env GOCACHE)"
+          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Go Build Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.go-cache-paths.outputs.go-build }}
+            ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-test-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-test
+            ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-build
+            ${{ runner.os }}-full-test
+      - name: Configure git for private modules
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
+        env:
+          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+  build-push-ecr:
+    needs: tests
+    name: "Build & Push ECR Docker Image "
+    environment: ${{ inputs.environment }}
+    runs-on: 'ubuntu-24.04-arm'
+    env:
+      HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
+      HAVE_RUN_CMD: ${{ inputs.run != '' }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Set up Go"
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=go-build::$(go env GOCACHE)"
+          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+      - name: Go Build Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.go-cache-paths.outputs.go-build }}
+            ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-build-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-build
+      - name: "[Build] configure git for private modules"
+        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: Set output
+        id: vars
+        run: |
+          echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+          echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: "configure aws credentials"
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
+          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          aws-region: ${{ secrets.CI_REGION }}
+      - name: "Pre-Run"
+        if: ${{ inputs.pre-run != '' }}
+        run: ${{ inputs.pre-run }}
+      - name: Build Go Binary
+        if: ${{ !inputs.arm64 }}
+        env:
+          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+        run: |
+          make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
+      - name: "Generate ECR Name"
+        id: ecr-name
+        run: |
+          echo "ECR_NAME=${{ inputs.ecr-name != '' && inputs.ecr-name || inputs.app-name }}" >> $GITHUB_ENV
+      - name: Set up QEMU
+        if: ${{ inputs.arm64 }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "arm64"
+      - name: Build Go Binary [arm64]
+        if: ${{ inputs.arm64 }}
+        env: 
+          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+        run: |
+          COMMAND=$(make --dry-run ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE})
+          COMMAND=$(echo "$COMMAND" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
+          if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
+              COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
+          fi
+          echo "$COMMAND"
+          echo "$COMMAND" | bash
+      - name: Build Docker Image [arm64]
+        if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
+        run: |
+          COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }})
+          COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
+          COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
+          echo "$COMMAND"
+          echo "$COMMAND" | bash
+
+          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
+          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
+      - name: "Run Trivy vulnerability scanner"
+        if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: docker.io/library/tempimage
+          format: 'json'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+      - name: Upload Trivy scan results to S3
+        if: ${{ inputs.environment == 'dev' }}
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --exclude '*' --include ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+        env:
+          AWS_S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
+          AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
+          AWS_REGION: ${{ secrets.CI_REGION }}
+      - name: "login ecr"
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
+      - name: "upload image"
+        if: (env.HAVE_RUN_CMD == 'false')
+        run: |
+          docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
+          if ${{inputs.latest}}; then docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest; fi
+      - name: "[Build]: build image & upload to ECR - CUSTOM"
+        if: ${{ env.HAVE_RUN_CMD == 'true' }}
+        run: ${{ inputs.run }}
