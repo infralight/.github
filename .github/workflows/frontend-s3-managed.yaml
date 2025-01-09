@@ -85,7 +85,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
       - name: Invalidate Cloudfront
-        uses: docker://public.ecr.aws/firefly/cloudfront-invalidation:v0.0.4
+        uses: docker://public.ecr.aws/firefly/cloudfront-invalidation:v0.0.5
         env:
           PATHS: '/*'
           AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
