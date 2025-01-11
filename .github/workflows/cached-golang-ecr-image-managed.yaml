@@ -10,7 +10,7 @@ on:
       architecture:
         type: string
         required: false
-        default: 'amd64'
+        default: 'arm64'
       go-version:
         default: '1.18.2'
         required: false
@@ -123,7 +123,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
       - name: Go Cache Preflights
@@ -132,8 +132,8 @@ jobs:
           RUNNER_OS=${{ runner.os }}
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-testing-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-testing-checksum-" >> "$GITHUB_OUTPUT"
+          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-" >> "$GITHUB_OUTPUT"
       - name: Go Cache
         id: go-cache-restore
         uses: actions/cache@v4
@@ -147,7 +147,7 @@ jobs:
       - run: |
           du -sh ${{ steps.go-cache-paths.outputs.go-build }} || echo "No cache found"
           du -sh ${{ steps.go-cache-paths.outputs.go-mod }} || echo "No cache found"
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
       - name: Configure git for private modules
@@ -155,17 +155,13 @@ jobs:
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-  #     - name: Go Cache Download & Build All
-  #       if: steps.go-cache-restore.outputs.cache-hit != 'true'
-  #       run: |
-  #         for target in $(make -pRrq | grep -oP '^ci-build-[^ :]*' | sort -u); do
-  #               make "$target" || echo "Skipping failed target: $target"
-  #         done
-  #         go mod download
-  #         go mod tidy
-  #         # make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
-  #         du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-  #         du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
+      - name: Go Cache Download & Tidy 
+        if: steps.go-cache-restore.outputs.cache-hit != 'true'
+        run: |
+          go mod download
+          go mod tidy
+          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
@@ -174,7 +170,7 @@ jobs:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
       - name: Go Cache Preflights
@@ -198,7 +194,7 @@ jobs:
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
             ${{ steps.go-cache-paths.outputs.cache-key-any2 }}
       - name: "Set up Go"
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
       - name: Configure Git for Private Modules
@@ -223,7 +219,7 @@ jobs:
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
-          make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
+          make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
       - name: Generate ECR Name
         id: ecr-name
         run: |
@@ -231,7 +227,7 @@ jobs:
       - name: Docker Build Image
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
         run: |
-          make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment == 'stag' && format('stg{0}-gitleaks-configuration', inputs.cluster) || contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('{0}-gitleaks-configuration', inputs.environment) || format('{0}-gitleaks-configuration', inputs.cluster) }}
+          make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
       - name: Set up QEMU
@@ -244,9 +240,8 @@ jobs:
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
-          COMMAND=$(make --dry-run ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }})
+          COMMAND=$(make --dry-run ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE})
           COMMAND=$(echo "$COMMAND" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
-          COMMAND=$(echo "$COMMAND" | sed 's/linux\/amd64\/linux/arm64/ig')
           if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
               COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
           fi
@@ -255,11 +250,12 @@ jobs:
       - name: Docker Build Image [arm64]
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
-          COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment == 'stag' && format('stg{0}-gitleaks-configuration', inputs.cluster) || contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('{0}-gitleaks-configuration', inputs.environment) || format('{0}-gitleaks-configuration', inputs.cluster) }})
+          COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }})
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
           echo "$COMMAND"
           echo "$COMMAND" | bash
+
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
@@ -267,15 +263,14 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: docker.io/library/tempimage
-          format: 'json:w
-          '
+          format: 'json'
           exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
-        env:
-          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
+        # env:
+        #   TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
       - name: Upload Trivy scan results to S3
         if: ${{ inputs.environment == 'dev' }}
         uses: jakejarvis/s3-sync-action@master
@@ -297,3 +292,12 @@ jobs:
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
+      - name: Go Cache Cleanup 
+        if: steps.go-cache-restore.outputs.cache-hit != 'true'
+        run: |
+          go clean -testcache -cache
+          go mod download
+          go mod tidy
+          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
+
