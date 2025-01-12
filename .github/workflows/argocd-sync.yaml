@@ -71,18 +71,28 @@ jobs:
           path: tmp/helm-values
           ref: main
           token: ${{ secrets.CI_PAT }}
+      - name: "UPDATE TAG FOR KICS WORKER"
+        id: kics-worker
+        if: ${{ inputs.appName == 'iac-ci-kics-worker' }}
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.tag = "${{ env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}.yaml
       - name: "UPDATE IMAGE TAG"
         id: iacathon
         if: ${{ inputs.fetcherName == 'iacathon-crawler' }}
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.base.tagsOverride.IACATHON_CONTAINER_IMAGE = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/iacathon-crawler:{2}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+          cmd: |
+            yq -i '.base.tagsOverride.IACATHON_CONTAINER_IMAGE = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/iacathon-crawler:{2}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+            yq -i '.tagsOverride.IACATHON_CONTAINER_IMAGE = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/iacathon-crawler:{2}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
       - name: "UPDATE IMAGE TAG"
         id: fetcher
         if: ${{ inputs.fetcherName != 'iacathon-crawler' }}
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '${{ inputs.fetcherName != '' && format('.base.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || '.base.tag' }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+          cmd: |
+           yq -i '${{ inputs.fetcherName != '' && format('.base.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || '.base.tag' }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+           yq -i '${{ inputs.fetcherName != '' && format('.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || '.tag' }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
