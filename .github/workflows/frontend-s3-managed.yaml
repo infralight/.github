@@ -85,13 +85,13 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
       - name: Invalidate Cloudfront
-        uses: chetan/invalidate-cloudfront-action@master
+        uses: docker://public.ecr.aws/firefly/cloudfront-invalidation:v0.0.5
         env:
           PATHS: '/*'
           AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
-          DISTRIBUTION: ${{ secrets.CI_DISTRIBUTION_ID }}
+          DISTRIBUTION_ID: ${{ secrets.CI_DISTRIBUTION_ID }}
       - name: Slack Notification
         if: ${{ success() }}
         uses: rtCamp/action-slack-notify@v2
