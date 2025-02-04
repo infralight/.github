@@ -74,6 +74,9 @@ jobs:
         run: |
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
           NODE_OPTIONS="--max-old-space-size=8192" npm run build
+      - name: Run Jest Tests
+        run: |
+          npm test
       - name: Upload files
         uses: jakejarvis/s3-sync-action@master
         with:
