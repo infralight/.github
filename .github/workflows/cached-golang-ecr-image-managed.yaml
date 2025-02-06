@@ -147,7 +147,7 @@ jobs:
       - run: |
           du -sh ${{ steps.go-cache-paths.outputs.go-build }} || echo "No cache found"
           du -sh ${{ steps.go-cache-paths.outputs.go-mod }} || echo "No cache found"
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
       - name: Configure git for private modules
@@ -194,7 +194,7 @@ jobs:
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
             ${{ steps.go-cache-paths.outputs.cache-key-any2 }}
       - name: "Set up Go"
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
       - name: Configure Git for Private Modules
