@@ -300,4 +300,3 @@ jobs:
           go mod tidy
           du -sh ${{ steps.go-cache-paths.outputs.go-build }}
           du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
-
