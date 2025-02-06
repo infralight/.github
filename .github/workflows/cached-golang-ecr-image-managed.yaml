@@ -155,7 +155,7 @@ jobs:
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-      - name: Go Cache Download & Tidy 
+      - name: Go Cache Cleanup 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         run: |
           go mod download
@@ -193,6 +193,14 @@ jobs:
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
             ${{ steps.go-cache-paths.outputs.cache-key-any2 }}
+      - name: Go Cache Cleanup 
+        if: steps.go-cache-restore.outputs.cache-hit != 'true'
+        run: |
+          go clean -testcache -cache
+          go mod download
+          go mod tidy
+          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
       - name: "Set up Go"
         uses: actions/setup-go@v2
         with:
@@ -292,11 +300,3 @@ jobs:
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
-      - name: Go Cache Cleanup 
-        if: steps.go-cache-restore.outputs.cache-hit != 'true'
-        run: |
-          go clean -testcache -cache
-          go mod download
-          go mod tidy
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
