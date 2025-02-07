@@ -122,6 +122,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
       - name: Go Cache Preflights
         id: go-cache-paths
         run: |
@@ -140,9 +143,6 @@ jobs:
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
-      - uses: actions/setup-go@v2
-        with:
-          go-version: ${{ inputs.go-version }}
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
