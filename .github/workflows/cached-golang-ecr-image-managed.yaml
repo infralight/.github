@@ -1,5 +1,4 @@
 name: Reusable Golang Build ECR Image
-
 on:
   workflow_call:
     inputs:
@@ -116,7 +115,6 @@ on:
         required: true
       CI_ACCOUNT_ID:
         required: true
-
 jobs:
   tests:
     name: Run Tests
@@ -170,9 +168,13 @@ jobs:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout 
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
+      - name: Configure Git for Private Modules
+        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: Go Cache Preflights
         id: go-cache-paths
         run: |
@@ -201,19 +203,16 @@ jobs:
           go mod tidy
           du -sh ${{ steps.go-cache-paths.outputs.go-build }}
           du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
-      - name: "Set up Go"
+      - name: "Setup Go"
         uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
-      - name: Configure Git for Private Modules
-        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
-        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
-      - name: Set output
+      - name: Set Outputs
         id: vars
         run: |
           echo ::set-output name=tag::${GITHUB_REF#refs/*/}
           echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - name: "configure aws credentials"
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
