@@ -195,14 +195,14 @@ jobs:
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
             ${{ steps.go-cache-paths.outputs.cache-key-any2 }}
-      - name: Go Cache Cleanup 
-        if: steps.go-cache-restore.outputs.cache-hit != 'true'
-        run: |
-          go clean -testcache -cache
-          go mod download
-          go mod tidy
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
+      # - name: Go Cache Cleanup 
+      #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
+      #   run: |
+      #     go clean -testcache -cache
+      #     go mod download
+      #     go mod tidy
+      #     du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+      #     du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
       - name: "Setup Go"
         uses: actions/setup-go@v2
         with:
