@@ -181,9 +181,9 @@ jobs:
           RUNNER_OS=${{ runner.os }}
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
-          echo "cache-key-any2=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-" >> "$GITHUB_OUTPUT"
+          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-checksum-" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any2=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
       - name: Go Cache
         id: go-cache-restore
         uses: actions/cache@v4
@@ -195,14 +195,6 @@ jobs:
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
             ${{ steps.go-cache-paths.outputs.cache-key-any2 }}
-      # - name: Go Cache Cleanup 
-      #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
-      #   run: |
-      #     go clean -testcache -cache
-      #     go mod download
-      #     go mod tidy
-      #     du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-      #     du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
       - name: "Setup Go"
         uses: actions/setup-go@v2
         with:
@@ -299,3 +291,10 @@ jobs:
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
+      - name: Go Cache Clean-up 
+        if: steps.go-cache-restore.outputs.cache-hit != 'true'
+        run: |
+          go mod download
+          go mod tidy
+          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
