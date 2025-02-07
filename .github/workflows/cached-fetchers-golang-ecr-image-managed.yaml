@@ -170,6 +170,10 @@ jobs:
       - name: Configure Git for Private Modules
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
       - name: Go Cache Preflights
         id: go-cache-paths
         run: |
@@ -189,10 +193,6 @@ jobs:
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: ${{ inputs.go-version }}
       - name: Go Cache Clean-up 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         run: |
