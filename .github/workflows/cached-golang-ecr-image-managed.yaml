@@ -132,7 +132,7 @@ jobs:
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
           echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
           echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-" >> "$GITHUB_OUTPUT"
-      - name: Go Cache
+      - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache@v4
         with:
@@ -142,9 +142,6 @@ jobs:
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
-      - run: |
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }} || echo "No cache found"
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }} || echo "No cache found"
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
@@ -194,17 +191,16 @@ jobs:
           key: ${{ steps.go-cache-paths.outputs.cache-key }}
           restore-keys: |
             ${{ steps.go-cache-paths.outputs.cache-key-any }}
-      - name: Go Cache Clean-up 
-        #if: steps.go-cache-restore.outputs.cache-hit != 'true'
-        run: |
-          go mod download
-          go mod tidy
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
+      - name: Go Cache Clean-up 
+        if: steps.go-cache-restore.outputs.cache-hit != 'true'
+        run: |
+          go mod tidy
+          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
       - name: Set Outputs
         id: vars
         run: |
