@@ -245,13 +245,13 @@ jobs:
           fi
           echo "$COMMAND"
           echo "$COMMAND" | bash
-      - name: Go Cache Clean-up 
-        if: steps.go-cache-restore.outputs.cache-hit != 'true'
-        run: |
-          go mod download
-          go mod tidy
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
+      # - name: Go Cache Clean-up 
+      #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
+      #   run: |
+      #     go mod download
+      #     go mod tidy
+      #     du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+      #     du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
       - name: Docker Build Image [arm64]
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
