@@ -196,7 +196,9 @@ jobs:
       - name: Go Cache Clean-up 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         run: |
-          go mod tidy
+          go mod download
+          go build -o /dev/null ./...
+          #go mod tidy
           du -sh ${{ steps.go-cache-paths.outputs.go-build }}
           du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
       - name: Set Outputs
