@@ -190,11 +190,10 @@ jobs:
           go-version: ${{ inputs.go-version }}
       - name: Go Cache Build 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
-        run: |
-          gh workflow run firefly-cache-manager.yaml #-f targets="$i/$total" -r $(git branch --show-current)
+        continue-on-error: true
+        run: gh workflow run firefly-cache-manager.yaml -f branch="$(git branch --show-current)"
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        continue-on-error: true
       - name: Set Outputs
         id: vars
         run: |
