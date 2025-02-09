@@ -1,4 +1,5 @@
 name: Reusable Golang Build ECR Image
+
 on:
   workflow_call:
     inputs:
@@ -115,6 +116,7 @@ on:
         required: true
       CI_ACCOUNT_ID:
         required: true
+
 jobs:
   tests:
     name: Run Tests
@@ -132,7 +134,7 @@ jobs:
           echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             ${{ steps.go-cache-paths.outputs.go-build }}
@@ -148,13 +150,6 @@ jobs:
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-      - name: Go Cache Cleanup 
-        if: steps.go-cache-restore.outputs.cache-hit != 'true'
-        run: |
-          go mod download
-          go mod tidy
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
@@ -181,7 +176,7 @@ jobs:
           echo "cache-key-any2=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             ${{ steps.go-cache-paths.outputs.go-build }}
@@ -193,12 +188,13 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
-      - name: Go Cache Clean-up 
+      - name: Go Cache Build 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         run: |
-          go mod tidy
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
+          gh workflow run firefly-cache-manager.yaml #-f targets="$i/$total" -r $(git branch --show-current)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        continue-on-error: true
       - name: Set Outputs
         id: vars
         run: |
