@@ -196,8 +196,8 @@ jobs:
       - name: Go Cache Clean-up 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         run: |
-          go mod download
-          go build -o /dev/null ./...
+          GOOS=linux GOARCH=arm64 go mod download
+          GOOS=linux GOARCH=arm64 go build -o /dev/null ./...
           #go mod tidy
           du -sh ${{ steps.go-cache-paths.outputs.go-build }}
           du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
