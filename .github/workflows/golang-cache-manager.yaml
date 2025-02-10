@@ -8,6 +8,9 @@ on:
         description: 'Branch name.'
         default: main
         required: true
+    secrets:
+      GLOBAL_PAT:
+        required: true
 
 jobs:
   build-tests-cache:
