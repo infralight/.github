@@ -88,28 +88,33 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ steps.go-cache-paths.outputs.go-version }}
-      # - name: Build Cache 
-      #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
-      #   env:
-      #     GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-      #     GOOS: linux
-      #     GOARCH: arm64
-      #   run: |
-      #     go mod tidy
-      #     go mod download
-      #     go build -o /dev/null ./...
-      #     du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-      #     du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
-      #     make ci-build-cache || true
-      - name: Go Build [arm64]
+      - name: Go Download and Build All 
+        if: steps.go-cache-restore.outputs.cache-hit != 'true'
+        env:
+          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+          GOOS: linux
+          GOARCH: arm64
+        run: |
+          go mod tidy
+          go mod download
+          go build -o /dev/null ./...
+          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
+      - name: Go Build App
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && env.architecture == 'arm64'
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
-          COMMAND=$(make --dry-run $(grep '^ci-build-' [Mm]akefile | head -1 | cut -d' ' -f1 | tr -d ':'))
-          COMMAND=$(echo "$COMMAND" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
-          if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
-              COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
+          if make ci-build-cache; then
+              break
           fi
-          echo "$COMMAND"
-          echo "$COMMAND" | bash
+          for target in $(grep '^ci-build-' [Mm]akefile | cut -d' ' -f1 | tr -d ':'); do
+              COMMAND=$(make --dry-run "$target" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
+              if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
+                  COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
+              fi
+              echo "$COMMAND"
+              if bash -c "$COMMAND" 2>/dev/null; then
+                  break
+              fi
+          done
