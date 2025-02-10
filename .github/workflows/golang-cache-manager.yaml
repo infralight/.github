@@ -88,19 +88,19 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ steps.go-cache-paths.outputs.go-version }}
-      - name: Build Cache 
-        if: steps.go-cache-restore.outputs.cache-hit != 'true'
-        env:
-          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-          GOOS: linux
-          GOARCH: arm64
-        run: |
-          go mod tidy
-          go mod download
-          go build -o /dev/null ./...
-          du -sh ${{ steps.go-cache-paths.outputs.go-build }}
-          du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
-          make ci-build-cache || true
+      # - name: Build Cache 
+      #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
+      #   env:
+      #     GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+      #     GOOS: linux
+      #     GOARCH: arm64
+      #   run: |
+      #     go mod tidy
+      #     go mod download
+      #     go build -o /dev/null ./...
+      #     du -sh ${{ steps.go-cache-paths.outputs.go-build }}
+      #     du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
+      #     make ci-build-cache || true
       - name: Go Build [arm64]
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && env.architecture == 'arm64'
         env:
