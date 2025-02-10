@@ -100,7 +100,7 @@ jobs:
           go build -o /dev/null ./...
           du -sh ${{ steps.go-cache-paths.outputs.go-build }}
           du -sh ${{ steps.go-cache-paths.outputs.go-mod }}
-          make ci-build-cached || true
+          make ci-build-cache || true
       - name: Go Build [arm64]
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && env.architecture == 'arm64'
         env:
