@@ -106,7 +106,7 @@ jobs:
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
-          COMMAND=$(make --dry-run $(grep '^ci-build-' Makefile | head -1 | cut -d' ' -f1 | tr -d ':'))
+          COMMAND=$(make --dry-run $(grep '^ci-build-' [Mm]akefile | head -1 | cut -d' ' -f1 | tr -d ':'))
           COMMAND=$(echo "$COMMAND" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
           if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
               COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
