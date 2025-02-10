@@ -50,7 +50,7 @@ jobs:
           go-version: ${{ steps.go-cache-paths.outputs.go-version }}
       - name: Go Run Tests 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
-        run: make $(grep '^test-' Makefile | head -1 | cut -d' ' -f1 | tr -d ':')
+        run: make $(grep '^test-' [Mm]akefile | head -1 | cut -d' ' -f1 | tr -d ':')
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
 
