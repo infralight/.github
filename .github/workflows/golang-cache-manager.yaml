@@ -105,10 +105,13 @@ jobs:
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
-          if make ci-build-cache; then
-              break
-          fi
-          for target in $(grep '^ci-build-' [Mm]akefile | cut -d' ' -f1 | tr -d ':'); do
+          targets="ci-build-cache $(grep '^ci-build-' [Mm]akefile | cut -d' ' -f1 | tr -d ':')"
+          for target in $targets; do
+              # Check if target exists in makefile
+              if ! make --dry-run "$target" &>/dev/null; then
+                continue 
+              fi
+
               COMMAND=$(make --dry-run "$target" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
               if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
                   COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
@@ -118,3 +121,4 @@ jobs:
                   break
               fi
           done
+
