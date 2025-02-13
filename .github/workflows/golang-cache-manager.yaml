@@ -30,7 +30,7 @@ jobs:
           RUNNER_OS=${{ runner.os }}
           GO_VERSION_FULL=$(grep '^go ' go.mod | awk '{print $2}')
           GO_VERSION=$(echo $GO_VERSION_FULL | cut -d'.' -f1-2)
-          echo "go-version-full=${GO_VERSION_FULL}" >> "$GITHUB_OUTPUT"
+          echo "go-version-long=${GO_VERSION_FULL}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
@@ -49,7 +49,7 @@ jobs:
         run: rm -rf ${{ steps.go-cache-paths.outputs.go-build }} ${{ steps.go-cache-paths.outputs.go-mod }}
       - uses: actions/setup-go@v2
         with:
-          go-version: ${{ steps.go-cache-paths.outputs.go-version-full }}
+          go-version: ${{ steps.go-cache-paths.outputs.go-version-long }}
       - name: Go Run Tests 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         run: make $(grep '^test-' [Mm]akefile | head -1 | cut -d' ' -f1 | tr -d ':')
@@ -73,7 +73,7 @@ jobs:
           RUNNER_OS=${{ runner.os }}
           GO_VERSION_FULL=$(grep '^go ' go.mod | awk '{print $2}')
           GO_VERSION=$(echo $GO_VERSION_FULL | cut -d'.' -f1-2)
-          echo "go-version-full=${GO_VERSION_FULL}" >> "$GITHUB_OUTPUT"
+          echo "go-version-long=${GO_VERSION_FULL}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
@@ -91,7 +91,7 @@ jobs:
         run: rm -rf ${{ steps.go-cache-paths.outputs.go-build }} ${{ steps.go-cache-paths.outputs.go-mod }}
       - uses: actions/setup-go@v2
         with:
-          go-version: ${{ steps.go-cache-paths.outputs.go-version-full }}
+          go-version: ${{ steps.go-cache-paths.outputs.go-version-long }}
       - name: Go Download and Build All 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         env:
