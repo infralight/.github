@@ -128,10 +128,11 @@ jobs:
         id: go-cache-paths
         run: |
           RUNNER_OS=${{ runner.os }}
+          GO_VERSION=$(echo ${{ inputs.go-version }} | cut -d'.' -f1-2)
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-" >> "$GITHUB_OUTPUT"
+          echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache/restore@v4
@@ -169,11 +170,12 @@ jobs:
         id: go-cache-paths
         run: |
           RUNNER_OS=${{ runner.os }}
+          GO_VERSION=$(echo ${{ inputs.go-version }} | cut -d'.' -f1-2)
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          echo "cache-key=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          echo "cache-key-any=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-checksum" >> "$GITHUB_OUTPUT"
-          echo "cache-key-any2=golang-v${{ inputs.go-version }}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
+          echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-checksum" >> "$GITHUB_OUTPUT"
+          echo "cache-key-any2=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache/restore@v4
