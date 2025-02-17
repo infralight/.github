@@ -54,7 +54,7 @@ jobs:
             ${{ steps.cache-init.outputs.go-mod }}
           key: ${{ steps.cache-init.outputs.cache-key }}
       - name: Check if triggered by cron and target is *
-        if: steps.cache-init.outputs.target == "*" && inputs.app-name == "*" 
+        if: steps.cache-init.outputs.target == '*' && inputs.app-name == '*' 
         run: exit 1
       # - name: Go Cache Clean-up
       #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
@@ -114,11 +114,11 @@ jobs:
       #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
       #   run: rm -rf ${{ steps.cache-init.outputs.go-build }} ${{ steps.cache-init.outputs.go-mod }}
       - uses: actions/setup-go@v2
-        if: steps.cache-init.outputs.target == "*" && steps.go-cache-restore.outputs.cache-hit != 'true' 
+        if: steps.cache-init.outputs.target == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' 
         with:
           go-version: ${{ steps.cache-init.outputs.go-version-long }}
       - name: Go Download and Build All 
-        if: steps.cache-init.outputs.target == "*" && steps.go-cache-restore.outputs.cache-hit != 'true' 
+        if: steps.cache-init.outputs.target == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' 
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
           GOOS: linux
