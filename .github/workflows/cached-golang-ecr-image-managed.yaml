@@ -210,7 +210,7 @@ jobs:
       - name: Go Cache Build 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         continue-on-error: true
-        run: gh workflow run firefly-cache-manager.yaml -f branch="$(git branch --show-current)" -f target="${{ steps.go-cache-paths.outputs.target }}"
+        run: gh workflow run firefly-cache-manager.yaml -f branch="$(git branch --show-current)" -f app-name="${{ steps.go-cache-paths.outputs.target }}"
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - name: Set Outputs

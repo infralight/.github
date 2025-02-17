@@ -54,7 +54,7 @@ jobs:
             ${{ steps.cache-init.outputs.go-mod }}
           key: ${{ steps.cache-init.outputs.cache-key }}
       - name: Check if triggered by cron and target is *
-        if: steps.cache-init.outputs.target == '*' && inputs.app-name == '*' 
+        if: steps.cache-init.outputs.target != '*' && inputs.app-name == '*' 
         run: exit 1
       # - name: Go Cache Clean-up
       #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
