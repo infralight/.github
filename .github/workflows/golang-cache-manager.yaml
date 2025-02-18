@@ -44,7 +44,7 @@ jobs:
             GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
             CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
-          GO_VERSION="v1.23"
+          GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
