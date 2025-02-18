@@ -123,6 +123,18 @@ jobs:
             ${{ steps.cache-init.outputs.go-build }}
             ${{ steps.cache-init.outputs.go-mod }}
           key: ${{ steps.cache-init.outputs.cache-key }}
+      - name: Call Recurisve Build Cache
+        if: steps.cache-init.outputs.caller == 'yes'
+        run: |
+          for file in .github/workflows/ci-*; do
+            if grep -q "cached-golang-ecr-image-managed.yaml" "$file"; then
+              go_version=$(grep 'go-version:' "$file" | sed 's/.*go-version: \(.*\)/\1/')
+              app_name=$(grep 'app-name:' "$file" | sed 's/.*app-name: "\(.*\)"/\1/')
+              if [[ $app_name != *"$"* ]]; then
+                gh workflow run firefly-cache-manager.yaml -f app-name="$app_name" -f go-version="$go_version"
+              fi
+            fi
+          done
       # - name: Go Cache Clean-up
       #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
       #   run: rm -rf ${{ steps.cache-init.outputs.go-build }} ${{ steps.cache-init.outputs.go-mod }}
