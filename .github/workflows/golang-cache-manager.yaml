@@ -11,7 +11,11 @@ on:
       app-name:
         type: string
         description: 'Target to run.'
-        default: '*'
+        required: true
+      go-version:
+        type: string
+        description: 'Go version to use.'
+        required: true
     secrets:
       GLOBAL_PAT:
         required: true
@@ -32,20 +36,22 @@ jobs:
         id: cache-init
         run: |
           RUNNER_OS=${{ runner.os }}
-          GO_VERSION_FULL=$(grep '^go ' go.mod | awk '{print $2}')
-          GO_VERSION=$(echo $GO_VERSION_FULL | cut -d'.' -f1-2)
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
-          echo "$TARGET"
+          if [ ${{ inputs.app-name }} != "*" ]; then
+            GO_VERSION_LONG=${{ inputs.go-version }}
+            GO_VERSION=$(echo $GO_VERSION_LONG=${{ | cut -d'.' -f1-2)
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+          else
+            GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
+            GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+          fi
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "go-version-long=${GO_VERSION_FULL}" >> "$GITHUB_OUTPUT"
+          echo "go-version-long=${GO_VERSION_LONG=${{}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          if [ "$TARGET" == "*" ] || [ "${{ inputs.app-name }}" == "*" ]; then
-            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          else
-            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          fi
+          echo "cache-key=${CACHE_KEY}" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache@v4
@@ -54,9 +60,10 @@ jobs:
             ${{ steps.cache-init.outputs.go-build }}
             ${{ steps.cache-init.outputs.go-mod }}
           key: ${{ steps.cache-init.outputs.cache-key }}
-      - name: Check if triggered by cron and target is *
-        if: steps.cache-init.outputs.target != '*' && inputs.app-name == '*' 
-        run: exit 1
+      # - name: Go Cache Check 
+      #   id: cache-check
+      #   if: steps.cache-init.outputs.target != '*' && inputs.app-name == '*' 
+      #   run: exit 1
       # - name: Go Cache Clean-up
       #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
       #   run: rm -rf ${{ steps.cache-init.outputs.go-build }} ${{ steps.cache-init.outputs.go-mod }}
@@ -67,7 +74,7 @@ jobs:
       - name: Go Run Tests 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         run: |
-          if [ "${{ steps.cache-init.outputs.target }}" != "*" ]; then
+          if [ "${{ inputs.app-name }}" != "*" ]; then
             make ${{ format('test-{0}', inputs.app-name) }}
           else
             make $(grep '^test-' [Mm]akefile | head -1 | cut -d' ' -f1 | tr -d ':')
@@ -90,19 +97,22 @@ jobs:
         id: cache-init
         run: |
           RUNNER_OS=${{ runner.os }}
-          GO_VERSION_FULL=$(grep '^go ' go.mod | awk '{print $2}')
-          GO_VERSION=$(echo $GO_VERSION_FULL | cut -d'.' -f1-2)
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
+          if [ ${{ inputs.app-name }} != "*" ]; then
+            GO_VERSION_LONG=${{ inputs.go-version }}
+            GO_VERSION=$(echo $GO_VERSION_LONG=${{ | cut -d'.' -f1-2)
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+          else
+            GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
+            GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+          fi
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "go-version-long=${GO_VERSION_FULL}" >> "$GITHUB_OUTPUT"
+          echo "go-version-long=${GO_VERSION_LONG=${{}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
           echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-          if [ "$TARGET" == "*" ] || [ "${{ inputs.app-name }}" == "*" ]; then
-            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          else
-            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-          fi
+          echo "cache-key=${CACHE_KEY}" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache@v4
@@ -115,7 +125,7 @@ jobs:
       #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
       #   run: rm -rf ${{ steps.cache-init.outputs.go-build }} ${{ steps.cache-init.outputs.go-mod }}
       - uses: actions/setup-go@v2
-        if: steps.cache-init.outputs.target == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' 
+        if: steps.go-cache-restore.outputs.cache-hit != 'true' 
         with:
           go-version: ${{ steps.cache-init.outputs.go-version-long }}
       - name: Go Download and Build All 
@@ -130,14 +140,13 @@ jobs:
           go build -o /dev/null ./...
           du -sh ${{ steps.cache-init.outputs.go-build }}
           du -sh ${{ steps.cache-init.outputs.go-mod }}
-      - name: Go Build App
+      - name: Go Build
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && env.architecture == 'arm64'
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
 
-          # If app-name defined
-          if [ "${{ steps.cache-init.outputs.target }}" != "*" ]; then
+          if [ "${{ inputs.app-name }}" != "*" ]; then
             make ci-build-${{ inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
             exit 0
           fi
