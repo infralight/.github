@@ -125,6 +125,8 @@ jobs:
           key: ${{ steps.cache-init.outputs.cache-key }}
       - name: Call Recurisve Build Cache
         if: steps.cache-init.outputs.caller == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           for file in .github/workflows/ci-*; do
             if grep -q "cached-golang-ecr-image-managed.yaml" "$file"; then
