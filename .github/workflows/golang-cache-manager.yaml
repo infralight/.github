@@ -37,6 +37,10 @@ jobs:
         run: |
           RUNNER_OS=${{ runner.os }}
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
+          CALLER=$(if [ "$TARGET" == "*" ] && [ "${{ inputs.app-name }}" == "*" ]; then echo "yes"; else echo "no"; fi)
+          echo $CALLER
+
+
           if [ ${{ inputs.app-name }} != "*" ]; then
             GO_VERSION_LONG=${{ inputs.go-version }}
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
