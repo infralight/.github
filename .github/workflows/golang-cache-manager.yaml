@@ -38,8 +38,6 @@ jobs:
           RUNNER_OS=${{ runner.os }}
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
           CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
-          echo $CALLER
-
           if [ ${{ inputs.app-name }} != "*" ]; then
             GO_VERSION_LONG=${{ inputs.go-version }}
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
@@ -57,6 +55,7 @@ jobs:
           echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
           echo "cache-key=${CACHE_KEY}" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
+        if: steps.cache-init.outputs.caller == 'no'
         id: go-cache-restore
         uses: actions/cache@v4
         with:
@@ -64,10 +63,6 @@ jobs:
             ${{ steps.cache-init.outputs.go-build }}
             ${{ steps.cache-init.outputs.go-mod }}
           key: ${{ steps.cache-init.outputs.cache-key }}
-      # - name: Go Cache Check 
-      #   id: cache-check
-      #   if: steps.cache-init.outputs.target != '*' && inputs.app-name == '*' 
-      #   run: exit 1
       # - name: Go Cache Clean-up
       #   if: steps.go-cache-restore.outputs.cache-hit != 'true'
       #   run: rm -rf ${{ steps.cache-init.outputs.go-build }} ${{ steps.cache-init.outputs.go-mod }}
@@ -103,8 +98,6 @@ jobs:
           RUNNER_OS=${{ runner.os }}
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
           CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
-          echo $CALLER
-
           if [ ${{ inputs.app-name }} != "*" ]; then
             GO_VERSION_LONG=${{ inputs.go-version }}
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
