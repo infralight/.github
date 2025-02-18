@@ -34,8 +34,8 @@ jobs:
           RUNNER_OS=${{ runner.os }}
           GO_VERSION_FULL=$(grep '^go ' go.mod | awk '{print $2}')
           GO_VERSION=$(echo $GO_VERSION_FULL | cut -d'.' -f1-2)
-          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":'*'}')
-          echo $TARGET
+          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
+          echo "$TARGET"
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_FULL}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
