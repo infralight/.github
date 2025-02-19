@@ -131,8 +131,8 @@ jobs:
           GO_VERSION=$(echo ${{ inputs.go-version }} | cut -d'.' -f1-2)
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}":"*"}')
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-          echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+          echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
+          echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
           if [ "$TARGET" == "*" ]; then
             echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
             echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-checksum-" >> "$GITHUB_OUTPUT"
@@ -182,8 +182,8 @@ jobs:
           GO_VERSION=$(echo ${{ inputs.go-version }} | cut -d'.' -f1-2)
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}":"*"}')
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-          echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+          echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
+          echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
           if [ "$TARGET" == "*" ]; then
             echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
             echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-build-checksum-" >> "$GITHUB_OUTPUT"
