@@ -120,7 +120,7 @@ on:
 jobs:
   tests:
     name: Run Tests
-    runs-on: 'ubuntu-latest'
+    runs-on: 'ubuntu-24.04-arm'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -134,12 +134,12 @@ jobs:
           echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
           echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
           if [ "$TARGET" == "*" ]; then
-            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-checksum-" >> "$GITHUB_OUTPUT"
+            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-checksum-" >> "$GITHUB_OUTPUT"
           else
-            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-${{ inputs.app-name}}-checksum-" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any2=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-" >> "$GITHUB_OUTPUT"
+            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-${{ inputs.app-name}}-checksum-" >> "$GITHUB_OUTPUT"
+            echo "cache-key-any2=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-" >> "$GITHUB_OUTPUT"
           fi
       - name: Go Cache Restore
         id: go-cache-restore
@@ -163,7 +163,7 @@ jobs:
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: 'ubuntu-latest'
+    runs-on: 'ubuntu-24.04-arm'
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
@@ -185,12 +185,12 @@ jobs:
           echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
           echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
           if [ "$TARGET" == "*" ]; then
-            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-checksum-" >> "$GITHUB_OUTPUT"
+            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-build-checksum-" >> "$GITHUB_OUTPUT"
           else
-            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any2=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-build-" >> "$GITHUB_OUTPUT"
+            echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
+            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-build-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
+            echo "cache-key-any2=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-build-" >> "$GITHUB_OUTPUT"
           fi
       - name: Go Cache Restore
         id: go-cache-restore
