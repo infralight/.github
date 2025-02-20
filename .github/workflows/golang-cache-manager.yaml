@@ -51,8 +51,8 @@ jobs:
           echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-          echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+          echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
+          echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
           echo "cache-key=${CACHE_KEY}" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         if: steps.cache-init.outputs.caller == 'no'
@@ -111,8 +111,8 @@ jobs:
           echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "go-build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-          echo "go-mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+          echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
+          echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
           echo "cache-key=${CACHE_KEY}" >> "$GITHUB_OUTPUT"
       - name: Go Cache Restore
         if: steps.cache-init.outputs.caller == 'no'
