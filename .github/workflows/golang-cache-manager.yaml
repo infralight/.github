@@ -22,9 +22,9 @@ on:
 
 jobs:
   build-tests-cache:
-    runs-on: 'ubuntu-24.04-arm'
+    runs-on: ubuntu-latest
     env:
-      architecture: ubuntu-arm64
+      architecture: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -82,9 +82,9 @@ jobs:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
 
   build-app-cache:
-    runs-on: 'ubuntu-24.04-arm'
+    runs-on: ubuntu-latest
     env:
-      architecture: ubuntu-arm64
+      architecture: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
