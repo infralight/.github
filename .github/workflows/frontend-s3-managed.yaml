@@ -68,6 +68,9 @@ jobs:
           AUTH0_NS: https://infralight.co
           AUTH0_AUDIENCE: infralight-api
           BACKEND_URL: ${{ secrets.CI_BACKEND_URL }}
+          SSO_DOMAINS_OKTA: ${{ vars.SSO_DOMAINS_OKTA }}
+          SSO_DOMAINS_AZURE: ${{ vars.SSO_DOMAINS_AZURE }}
+          SSO_DOMAINS_PING: ${{ vars.SSO_DOMAINS_PING }}
       - name: Frontend build (npm)
         env:
           CI: "false"
