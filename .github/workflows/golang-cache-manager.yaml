@@ -20,11 +20,13 @@ on:
       GLOBAL_PAT:
         required: true
 
+env:
+  architecture: 'arm64'
+  cache-runner-key: '${{ runner.os }}-${{ env.architecture }}'
+
 jobs:
   build-tests-cache:
     runs-on: ubuntu-latest
-    env:
-      architecture: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,8 +36,10 @@ jobs:
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: Go Cache Preflights
         id: cache-init
+        env:
+          verb: 'tests'
         run: |
-          RUNNER_OS=${{ runner.os }}
+          RUNNER=${{ env.cache-runner-key }}
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
           CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
           if [ "${{ inputs.app-name }}" != "*" ]; then
@@ -44,11 +48,11 @@ jobs:
             APP_DIR="$(make --dry-run ci-build-${{ inputs.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
             APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
             GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER,,}-${{ env.verb }}-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
           else
             GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER,,}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
@@ -86,8 +90,6 @@ jobs:
 
   build-app-cache:
     runs-on: ubuntu-latest
-    env:
-      architecture: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -97,8 +99,10 @@ jobs:
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: Go Cache Preflights
         id: cache-init
+        env:
+          verb: 'build'
         run: |
-          RUNNER_OS=${{ runner.os }}
+          RUNNER=${{ env.cache-runner-key }}
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
           CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
           if [ "${{ inputs.app-name }}" != "*" ]; then
@@ -107,11 +111,11 @@ jobs:
             APP_DIR="$(make --dry-run ci-build-${{ inputs.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
             APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
             GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER,,}-${{ env.verb }}-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
           else
             GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER,,}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
