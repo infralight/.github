@@ -143,8 +143,8 @@ jobs:
             APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
             GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
             echo "cache-key=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any2=golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ inputs.architecture }}-tests-" >> "$GITHUB_OUTPUT"
+            echo "cache-key-any=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
+            echo "cache-key-any2=golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ inputs.architecture }}-tests-" >> "$GITHUB_OUTPUT"
           fi
       - name: Go Cache Restore
         id: go-cache-restore
