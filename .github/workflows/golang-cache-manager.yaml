@@ -1,5 +1,8 @@
 name: Reusable Golang Cache Manager 
 
+env:
+  architecture: arm64
+
 on:
   workflow_call:
     inputs:
@@ -23,8 +26,6 @@ on:
 jobs:
   build-tests-cache:
     runs-on: 'ubuntu-24.04-arm'
-    env:
-      architecture: ubuntu-arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,11 +45,11 @@ jobs:
             APP_DIR="$(make --dry-run ci-build-${{ inputs.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
             APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
             GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ env.architecture }}-tests-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
           else
             GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ env.architecture }}-tests-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
@@ -86,8 +87,6 @@ jobs:
 
   build-app-cache:
     runs-on: 'ubuntu-24.04-arm'
-    env:
-      architecture: ubuntu-arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -107,11 +106,11 @@ jobs:
             APP_DIR="$(make --dry-run ci-build-${{ inputs.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
             APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
             GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ env.architecture }}-build-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
           else
             GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-ubuntu-${{ env.architecture }}-build-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
