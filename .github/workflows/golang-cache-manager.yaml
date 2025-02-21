@@ -41,7 +41,10 @@ jobs:
           if [ "${{ inputs.app-name }}" != "*" ]; then
             GO_VERSION_LONG=${{ inputs.go-version }}
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+            APP_DIR="$(make --dry-run ci-build-${{ inputs.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
+            APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
+            GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-tests-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
           else
             GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
@@ -101,7 +104,10 @@ jobs:
           if [ "${{ inputs.app-name }}" != "*" ]; then
             GO_VERSION_LONG=${{ inputs.go-version }}
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
-            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-${{ inputs.app-name }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
+            APP_DIR="$(make --dry-run ci-build-${{ inputs.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
+            APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
+            GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
+            CACHE_KEY="golang-v${GO_VERSION}-${RUNNER_OS,,}-${{ env.architecture }}-build-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
           else
             GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
