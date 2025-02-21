@@ -118,7 +118,6 @@ on:
         required: true
 
 env:
-  app-name: ${{ inputs.app-name }}
   cache-runner-key: 'linux'
 
 jobs:
@@ -132,9 +131,10 @@ jobs:
         id: go-cache-paths
         env:
           verb: 'tests'
+          app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
         run: |
           GO_VERSION=$(echo ${{ inputs.go-version }} | cut -d'.' -f1-2)
-          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ env.app_name }}":"*"}')
+          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ env.app-name }}":"*"}')
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
           echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
@@ -142,7 +142,7 @@ jobs:
             echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
             echo "cache-key-any=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-" >> "$GITHUB_OUTPUT"
           else
-            APP_DIR="$(make --dry-run ci-build-${{ env.app_name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
+            APP_DIR="$(make --dry-run ci-build-${{ env.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
             APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
             GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
             echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)" >> "$GITHUB_OUTPUT"
@@ -188,9 +188,10 @@ jobs:
         id: go-cache-paths
         env:
           verb: 'build'
+          app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
         run: |
           GO_VERSION=$(echo ${{ inputs.go-version }} | cut -d'.' -f1-2)
-          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ env.app_name }}":"*"}')
+          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ env.app-name }}":"*"}')
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
           echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
@@ -198,7 +199,7 @@ jobs:
             echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
             echo "cache-key-any=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-" >> "$GITHUB_OUTPUT"
           else
-            APP_DIR="$(make --dry-run ci-build-${{ env.app_name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
+            APP_DIR="$(make --dry-run ci-build-${{ env.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
             APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
             GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
             echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)" >> "$GITHUB_OUTPUT"
