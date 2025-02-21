@@ -22,7 +22,7 @@ on:
 
 env:
   architecture: 'arm64'
-  cache-runner-key: env.architecture
+  cache-runner-key: 'linux-ubuntu-${{ env.architecture }}'
 
 jobs:
   build-tests-cache:
