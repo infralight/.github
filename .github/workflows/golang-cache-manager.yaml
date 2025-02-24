@@ -128,6 +128,16 @@ jobs:
           echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
           echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
           echo "cache-key=${CACHE_KEY}" >> "$GITHUB_OUTPUT"
+      - name: Print Cache Paths
+        run: |
+          echo "Cache Paths Information:"
+          echo "Target: ${{ steps.cache-init.outputs.target }}"
+          echo "Caller: ${{ steps.cache-init.outputs.caller }}"
+          echo "Go Version (Long): ${{ steps.cache-init.outputs.go-version-long }}"
+          echo "Go Version: ${{ steps.cache-init.outputs.go-version }}"
+          echo "Go Build Path: ${{ steps.cache-init.outputs.go-build }}"
+          echo "Go Mod Path: ${{ steps.cache-init.outputs.go-mod }}"
+          echo "Cache Key: ${{ steps.cache-init.outputs.cache-key }}"
       - name: Go Cache Restore
         if: steps.cache-init.outputs.caller == 'no'
         id: go-cache-restore
