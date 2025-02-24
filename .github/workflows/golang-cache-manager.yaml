@@ -170,7 +170,7 @@ jobs:
         run: |
           go mod tidy
           go mod download
-          go build -o /dev/null ./... || (echo "Failed to build all targets" && go clean -cache)
+          go build -o /dev/null ./... || (go clean -cache && make $(make -pq | awk -F':' '/^ci-build/ {print $1}'))
           du -sh ${{ steps.cache-init.outputs.go-build }}
           du -sh ${{ steps.cache-init.outputs.go-mod }}
       - name: Go Build
