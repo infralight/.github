@@ -41,6 +41,8 @@ jobs:
         run: |
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
           CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
+
+          echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
           [ "$CALLER" = "yes" ] && exit 0
 
           if [ "${{ inputs.app-name }}" != "*" ]; then
@@ -57,7 +59,6 @@ jobs:
           fi
 
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
           echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
@@ -122,6 +123,7 @@ jobs:
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
             CACHE_KEY="golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
+
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
@@ -129,16 +131,6 @@ jobs:
           echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
           echo "cache-key=${CACHE_KEY}" >> "$GITHUB_OUTPUT"
 
-      - name: Print Cache Paths
-        run: |
-          echo "Cache Paths Information:"
-          echo "Target: ${{ steps.cache-init.outputs.target }}"
-          echo "Caller: ${{ steps.cache-init.outputs.caller }}"
-          echo "Go Version (Long): ${{ steps.cache-init.outputs.go-version-long }}"
-          echo "Go Version: ${{ steps.cache-init.outputs.go-version }}"
-          echo "Go Build Path: ${{ steps.cache-init.outputs.go-build }}"
-          echo "Go Mod Path: ${{ steps.cache-init.outputs.go-mod }}"
-          echo "Cache Key: ${{ steps.cache-init.outputs.cache-key }}"
       - name: Go Cache Restore
         if: steps.cache-init.outputs.caller == 'no'
         id: go-cache-restore
