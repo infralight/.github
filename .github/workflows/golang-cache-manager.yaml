@@ -161,7 +161,7 @@ jobs:
         run: |
           go mod tidy
           go mod download
-          go build -o /dev/null ./...
+          go build -o /dev/null ./... || echo "Failed to build all targets" && go clean -cache
           du -sh ${{ steps.cache-init.outputs.go-build }}
           du -sh ${{ steps.cache-init.outputs.go-mod }}
       - name: Go Build
