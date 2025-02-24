@@ -41,6 +41,8 @@ jobs:
         run: |
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
           CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
+          [ "$CALLER" = "yes" ] && exit 0
+
           if [ "${{ inputs.app-name }}" != "*" ]; then
             GO_VERSION_LONG=${{ inputs.go-version }}
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
@@ -53,6 +55,7 @@ jobs:
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
             CACHE_KEY="golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
+
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
@@ -103,6 +106,8 @@ jobs:
         run: |
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
           CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
+          [ "$CALLER" = "yes" ] && exit 0
+
           if [ "${{ inputs.app-name }}" != "*" ]; then
             GO_VERSION_LONG=${{ inputs.go-version }}
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
@@ -115,6 +120,7 @@ jobs:
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
             CACHE_KEY="golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
+
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
