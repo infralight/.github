@@ -41,6 +41,10 @@ jobs:
         run: |
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
           CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
+
+          echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
+          [ "$CALLER" = "yes" ] && exit 0
+
           if [ "${{ inputs.app-name }}" != "*" ]; then
             GO_VERSION_LONG=${{ inputs.go-version }}
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
@@ -53,8 +57,8 @@ jobs:
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
             CACHE_KEY="golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
+
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
           echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
@@ -103,6 +107,10 @@ jobs:
         run: |
           TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
           CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
+
+          echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
+          [ "$CALLER" = "yes" ] && exit 0
+
           if [ "${{ inputs.app-name }}" != "*" ]; then
             GO_VERSION_LONG=${{ inputs.go-version }}
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
@@ -115,13 +123,14 @@ jobs:
             GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
             CACHE_KEY="golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
           fi
+
           echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
           echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
           echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
           echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
           echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
           echo "cache-key=${CACHE_KEY}" >> "$GITHUB_OUTPUT"
+
       - name: Go Cache Restore
         if: steps.cache-init.outputs.caller == 'no'
         id: go-cache-restore
@@ -137,7 +146,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           for file in .github/workflows/ci-*; do
-            if grep -q "cached-golang-ecr-image-managed.yaml" "$file"; then
+            if grep -q "cached-.*golang-.*\.yaml" "$file"; then
               go_version=$(grep 'go-version:' "$file" | sed 's/.*go-version: \(.*\)/\1/')
               app_name=$(grep 'app-name:' "$file" | sed 's/.*app-name: \(.*\)/\1/')
               if [[ $app_name != *"$"* ]]; then
@@ -161,7 +170,7 @@ jobs:
         run: |
           go mod tidy
           go mod download
-          go build -o /dev/null ./...
+          go build -o /dev/null ./... || (go clean -cache && make $(make -pq | awk -F':' '/^ci-build/ {print $1}'))
           du -sh ${{ steps.cache-init.outputs.go-build }}
           du -sh ${{ steps.cache-init.outputs.go-mod }}
       - name: Go Build
