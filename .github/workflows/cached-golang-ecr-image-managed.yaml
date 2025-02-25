@@ -221,6 +221,9 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
+      - run: |
+          go env GOCACHE
+          go env GOMODCACHE
       - name: Go Cache Build 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         continue-on-error: true
