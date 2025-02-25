@@ -167,6 +167,7 @@ jobs:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
           GOOS: linux
           GOARCH: arm64
+          CGO_ENABLED: 0
         run: |
           go mod tidy
           go mod download
