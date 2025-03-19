@@ -11,6 +11,10 @@ echo "target=${target}" >> "$GITHUB_OUTPUT"
 echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
 echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
 
+# DEBUG
+echo $go_version
+echo $target
+
 # Export Cache Keys
 if [ "$target" != "*" ]; then
     app_dir="$(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
@@ -22,6 +26,7 @@ if [ "$target" != "*" ]; then
     echo "cache-key-any2=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-" >> "$GITHUB_OUTPUT"
 else
     checksum=$(sha256sum **/go.sum  | awk '{print $1}' | cut -c 1-6)
+    echo cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$checksum
     echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$checksum" >> "$GITHUB_OUTPUT"
     echo "cache-key-any=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-" >> "$GITHUB_OUTPUT"
 fi
