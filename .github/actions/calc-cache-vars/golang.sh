@@ -21,7 +21,8 @@ if [ "$target" != "*" ]; then
     echo "cache-key-any=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-$APP_NAME-checksum-" >> "$GITHUB_OUTPUT"
     echo "cache-key-any2=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-" >> "$GITHUB_OUTPUT"
 else
-    ls **/go.sum
+    echo $(find . -name go.sum)
+    pwd && ls && tree
     checksum=$(find . -name go.sum -exec sha256sum {} \; | head -n 1 | awk '{print $1}' | cut -c 1-6)
     echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$checksum"
     echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$checksum" >> "$GITHUB_OUTPUT"
