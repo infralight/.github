@@ -130,7 +130,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: go-cache-paths
-        uses: ./.github/actions/calc-cache-vars
+        uses: ./.github/actions/calc-cache-vars@10xx
         env:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
           architecture: ${{ inputs.architecture }}
