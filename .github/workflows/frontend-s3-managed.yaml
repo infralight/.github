@@ -58,6 +58,12 @@ jobs:
         uses: actions/setup-node@v3.5.0
         with:
           node-version: ${{ inputs.node-version }}
+      - name: Enable Memory Swap
+        run: |
+          sudo fallocate -l 2G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
 
       - name: setup config.js with environment
         run: ./scripts/set_vars.sh
