@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Trim Patch Version (e.g. 1.23.0 -> 1.23)
-go_version=$(echo $GO_VERSION | cut -d'.' -f1-2)
+go_version=$(echo $go_version | cut -d'.' -f1-2)
 
 # Export Target App (e.g. "app-name" or "*")
 target=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${APP_NAME}":"*"}')
@@ -13,7 +13,7 @@ echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
 
 # DEBUG
 echo $go_version
-echo $target
+echo "$target"
 
 # Export Cache Keys
 if [ "$target" != "*" ]; then
