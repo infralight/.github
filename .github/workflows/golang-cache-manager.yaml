@@ -170,8 +170,18 @@ jobs:
           CGO_ENABLED: 0
         run: |
           go mod download
-          make $(make -qp | awk -F':' '/^ci-build-/{print $1}')
-          #go build -o /dev/null ./... || (go clean -cache && make $(make -pq | awk -F':' '/^ci-build/ {print $1}'))
+
+          targets="ci-build-cache $(grep '^ci-build-' [Mm]akefile | cut -d' ' -f1 | tr -d ':')"
+          for target in $targets; do
+              COMMAND=$(make --dry-run "$target" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
+              if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
+                  COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
+              fi
+              echo "$COMMAND"
+              bash -c "$COMMAND" 
+          done
+
+
           du -sh ${{ steps.cache-init.outputs.go-build }}
           du -sh ${{ steps.cache-init.outputs.go-mod }}
       - name: Go Build
