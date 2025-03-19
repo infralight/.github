@@ -169,9 +169,9 @@ jobs:
           GOARCH: arm64
           CGO_ENABLED: 0
         run: |
-          go mod tidy
           go mod download
-          go build -o /dev/null ./... || (go clean -cache && make $(make -pq | awk -F':' '/^ci-build/ {print $1}'))
+          make $(make -qp | awk -F':' '/^ci-build-/{print $1}')
+          #go build -o /dev/null ./... || (go clean -cache && make $(make -pq | awk -F':' '/^ci-build/ {print $1}'))
           du -sh ${{ steps.cache-init.outputs.go-build }}
           du -sh ${{ steps.cache-init.outputs.go-mod }}
       - name: Go Build
