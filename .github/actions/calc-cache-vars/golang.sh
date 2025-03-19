@@ -15,8 +15,9 @@ echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
 echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
 
 # DEBUG
-echo $go_version
+echo "$go_version"
 echo "$target"
+echo "$go_version"
 
 # Export Cache Keys
 if [ "$target" != "*" ]; then
@@ -28,6 +29,10 @@ if [ "$target" != "*" ]; then
     echo "cache-key-any=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-$APP_NAME-checksum-" >> "$GITHUB_OUTPUT"
     echo "cache-key-any2=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-" >> "$GITHUB_OUTPUT"
 else
+    echo "$go_version"
+    echo "here -> $go_version"
+    echo "here -> ${go_version}"
+    echo "here -> $GO_VERSION"
     checksum=$(find . -name go.sum -exec sha256sum {} \; | head -n 1 | awk '{print $1}' | cut -c 1-6)
     echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$checksum"
     echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$checksum" >> "$GITHUB_OUTPUT"
