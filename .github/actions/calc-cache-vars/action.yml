@@ -38,5 +38,6 @@ runs:
       env:
         APP_NAME: ${{ inputs.app-name }}
         ARCHITECTURE: ${{ inputs.architecture }}
+        GO_VERSION: ${{ inputs.go-version }}
         OS_RUNNER_KEY: ${{ inputs.os-runner-key }}
         VERB: ${{ inputs.verb }}

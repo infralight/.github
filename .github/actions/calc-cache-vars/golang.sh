@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo Hi
-echo $go_version
+echo $GO_VERSION
 
 # Trim Patch Version (e.g. 1.23.0 -> 1.23)
 go_version=$(echo $go_version | cut -d'.' -f1-2)
