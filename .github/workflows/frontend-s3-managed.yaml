@@ -77,7 +77,7 @@ jobs:
       - name: Frontend Build (npm)
         env:
           CI: "false"
-          NODE_OPTIONS: "--max-old-space-size=7168"
+          NODE_OPTIONS: "--max-old-space-size=9728"
         run: |
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
           npm run build
