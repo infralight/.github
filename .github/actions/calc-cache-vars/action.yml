@@ -27,6 +27,7 @@ runs:
   steps:
     - name: Calculate Golang Cache Variables
       if: inputs.language == 'golang'
+      id: golang
       run: ${{ github.action_path }}/golang.sh
       shell: bash
       env:
@@ -36,3 +37,23 @@ runs:
         OS_RUNNER_KEY: ${{ inputs.os-runner-key }}
         VERB: ${{ inputs.verb }}
         MONO_GO_SUM_HASH: ${{ hashFiles('**/go.sum') }}
+
+outputs:
+  go-build:
+    value: ${{ steps.golang.outputs.go-build }}
+    description: "The path to the Go build cache"
+  go-mod:
+    value: ${{ steps.golang.outputs.go-mod }}
+    description: "The path to the Go module cache"
+  cache-key:
+    value: ${{ steps.golang.outputs.cache-key }}
+    description: "The cache key"
+  cache-key-any:
+    value: ${{ steps.golang.outputs.cache-key-any }}
+    description: "The cache key for any"
+  cache-key-any2:
+    value: ${{ steps.golang.outputs.cache-key-any2 }}
+    description: "The cache key for any2"
+  target:
+    value: ${{ steps.golang.outputs.target }}
+    description: "The target"
