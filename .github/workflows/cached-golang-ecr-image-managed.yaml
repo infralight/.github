@@ -137,7 +137,6 @@ jobs:
           go-version: ${{ inputs.go-version }}
           verb: 'tests'
       - run: |
-          sha1sum $(find . -name go.sum)
           echo ${{ hashFiles('**/go.sum') }}
       - run: exit -1 
 

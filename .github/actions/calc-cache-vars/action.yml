@@ -35,3 +35,4 @@ runs:
         GO_VERSION: ${{ inputs.go-version }}
         OS_RUNNER_KEY: ${{ inputs.os-runner-key }}
         VERB: ${{ inputs.verb }}
+        MONO_GO_SUM_HASH: ${{ hashFiles('**/go.sum') | cut -c 1-6  }}
