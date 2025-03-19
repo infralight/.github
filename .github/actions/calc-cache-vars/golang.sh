@@ -24,7 +24,7 @@ if [ "$target" != "*" ]; then
     app_dir="$(dirname $app_dir 2>/dev/null || echo)"
     go_sum_path="$([ -z "$app_dir" ] && ls **/go.sum | head -n 1 || echo "$app_dir/go.sum")"
     checksum=$(sha256sum $go_sum_path | awk '{print $1}' | cut -c 1-6)
-    echo "cache-key=golang-v${GO_VERSION}-${OS_RUNNER_KEY}-${ARCHITECTURE}-${VERB}-${APP_NAME}-checksum-${checksum}" >> "$GITHUB_OUTPUT"
+    echo "cache-key=golang-v${go_version}-${OS_RUNNER_KEY}-${ARCHITECTURE}-${VERB}-${APP_NAME}-checksum-${checksum}" >> "$GITHUB_OUTPUT"
     echo "cache-key-any=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-$APP_NAME-checksum-" >> "$GITHUB_OUTPUT"
     echo "cache-key-any2=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-" >> "$GITHUB_OUTPUT"
 else
