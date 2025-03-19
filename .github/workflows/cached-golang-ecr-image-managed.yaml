@@ -136,6 +136,7 @@ jobs:
           architecture: ${{ inputs.architecture }}
           go-version: ${{ inputs.go-version }}
           verb: 'tests'
+      - run: echo ${{ hashFiles('**/go.sum') }}
       - run: exit -1 
 
       - name: Go Cache Restore
