@@ -13,15 +13,15 @@ echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
 
 # Export Cache Keys
 if [ "$target" != "*" ]; then
-    local app_dir="$(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
-    local app_dir="$(dirname $app_dir 2>/dev/null || echo)"
-    local go_sum_path="$([ -z "$app_dir" ] && ls **/go.sum | head -n 1 || echo "$app_dir/go.sum")"
-    local checksum=$(sha256sum $go_sum_path | awk '{print $1}' | cut -c 1-6)
+    app_dir="$(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
+    app_dir="$(dirname $app_dir 2>/dev/null || echo)"
+    go_sum_path="$([ -z "$app_dir" ] && ls **/go.sum | head -n 1 || echo "$app_dir/go.sum")"
+    checksum=$(sha256sum $go_sum_path | awk '{print $1}' | cut -c 1-6)
     echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-$APP_NAME-checksum-$checksum" >> "$GITHUB_OUTPUT"
     echo "cache-key-any=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-$APP_NAME-checksum-" >> "$GITHUB_OUTPUT"
     echo "cache-key-any2=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-" >> "$GITHUB_OUTPUT"
 else
-    local checksum=$(sha256sum **/go.sum  | awk '{print $1}' | cut -c 1-6)
+    checksum=$(sha256sum **/go.sum  | awk '{print $1}' | cut -c 1-6)
     echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$checksum" >> "$GITHUB_OUTPUT"
     echo "cache-key-any=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-" >> "$GITHUB_OUTPUT"
 fi
