@@ -1,0 +1,43 @@
+name: Calculate Cache Variables
+
+description: "Calculates cache variables for extracting cache keys, paths, and other cache-related parameters"
+
+inputs:
+  app-name:
+    description: "The name of the application"
+    required: true
+  architecture:
+    description: "The architecture of the CI/CD pipeline"
+    default: "arm64"
+  go-version:
+    description: "The version of Go to use"
+    default: "1.23"
+  language:
+    description: "The language of the CI/CD pipeline"
+    default: "golang"
+  os-runner-key:
+    description: "The OS of the runner"
+    default: "linux"
+  verb:
+    description: "The verb of the CI/CD pipeline [build, test]"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set GitHub Path
+      run: echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
+      shell: bash
+      env:
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+
+    - name: Calculate Golang Cache Variables
+      if: inputs.language == 'golang'
+      run: ${{ github.action_path }}/golang.sh
+      shell: bash
+      env:
+        APP_NAME: ${{ inputs.app-name }}
+        ARCHITECTURE: ${{ inputs.architecture }}
+        GO_VERSION: ${{ inputs.go-version }}
+        OS_RUNNER_KEY: ${{ inputs.os-runner-key }}
+        VERB: ${{ inputs.verb }}

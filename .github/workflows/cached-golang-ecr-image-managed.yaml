@@ -127,35 +127,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Go Cache Preflights
         id: go-cache-paths
+        uses: ./.github/actions/calc-cache-vars
         env:
-          verb: 'tests'
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
-        run: |
-          GO_VERSION=$(echo ${{ inputs.go-version }} | cut -d'.' -f1-2)
-          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ env.app-name }}":"*"}')
-          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
-          echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
-          if [ "$TARGET" == "*" ]; then
-            echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-" >> "$GITHUB_OUTPUT"
-          else
-            APP_DIR="$(make --dry-run ci-build-${{ env.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
-            APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
-            GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
-            echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any2=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-" >> "$GITHUB_OUTPUT"
-          fi
-
-          # Print every output
-          echo "target=${TARGET}"
-          echo "go-build=/home/runner/.cache/go-build"
-          echo "go-mod=/home/runner/go/pkg/mod"
-          echo "cache-key=${{ steps.go-cache-paths.outputs.cache-key }}"
-          echo "cache-key-any=${{ steps.go-cache-paths.outputs.cache-key-any }}"
+          architecture: ${{ inputs.architecture }}
+          go-version: ${{ inputs.go-version }}
+          verb: 'tests'
+      - run: exit 0
 
       - name: Go Cache Restore
         id: go-cache-restore
