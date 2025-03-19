@@ -80,6 +80,13 @@ jobs:
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache-init.outputs.caller == 'no'
         with:
           go-version: ${{ steps.cache-init.outputs.go-version-long }}
+
+      - name: Set up QEMU
+        if: ${{ inputs.arm64 }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "arm64"
+        
       - name: Go Run Tests 
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache-init.outputs.caller == 'no'
         run: |
@@ -161,6 +168,13 @@ jobs:
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache-init.outputs.caller == 'no'
         with:
           go-version: ${{ steps.cache-init.outputs.go-version-long }}
+
+      - name: Set up QEMU
+        if: ${{ inputs.arm64 }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "arm64"
+
       - name: Go Download and Build All 
         if: inputs.app-name == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache-init.outputs.caller == 'no'
         env:
@@ -178,7 +192,7 @@ jobs:
                   COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
               fi
               echo "$COMMAND"
-              bash -c "$COMMAND" 
+              bash -c "$COMMAND" || continue
           done
 
 
