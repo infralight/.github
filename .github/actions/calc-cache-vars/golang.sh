@@ -21,7 +21,8 @@ if [ "$target" != "*" ]; then
     echo "cache-key-any=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-$APP_NAME-checksum-" >> "$GITHUB_OUTPUT"
     echo "cache-key-any2=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-" >> "$GITHUB_OUTPUT"
 else
-    echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$MONO_GO_SUM_HASH"
-    echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$MONO_GO_SUM_HASH" >> "$GITHUB_OUTPUT"
+    checksum=$(echo $MONO_GO_SUM_HASH | cut -c 1-6)
+    echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$checksum"
+    echo "cache-key=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-$checksum" >> "$GITHUB_OUTPUT"
     echo "cache-key-any=golang-v$go_version-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-checksum-" >> "$GITHUB_OUTPUT"
 fi
