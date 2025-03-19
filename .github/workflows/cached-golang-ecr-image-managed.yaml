@@ -149,6 +149,14 @@ jobs:
             echo "cache-key-any=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
             echo "cache-key-any2=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-" >> "$GITHUB_OUTPUT"
           fi
+
+          # Print every output
+          echo "target=${TARGET}"
+          echo "go-build=/home/runner/.cache/go-build"
+          echo "go-mod=/home/runner/go/pkg/mod"
+          echo "cache-key=${{ steps.go-cache-paths.outputs.cache-key }}"
+          echo "cache-key-any=${{ steps.go-cache-paths.outputs.cache-key-any }}"
+
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache/restore@v4
