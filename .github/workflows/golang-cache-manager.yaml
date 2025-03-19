@@ -82,7 +82,6 @@ jobs:
           go-version: ${{ steps.cache-init.outputs.go-version-long }}
 
       - name: Set up QEMU
-        if: ${{ inputs.arm64 }}
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
@@ -170,7 +169,6 @@ jobs:
           go-version: ${{ steps.cache-init.outputs.go-version-long }}
 
       - name: Set up QEMU
-        if: ${{ inputs.arm64 }}
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
