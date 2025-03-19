@@ -74,9 +74,10 @@ jobs:
       - name: Frontend build (npm)
         env:
           CI: "false"
+          NODE_OPTIONS: "--max-old-space-size=7168"
         run: |
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
-          NODE_OPTIONS="--max-old-space-size=8192" npm run build
+          npm run build
       - name: Upload files
         uses: jakejarvis/s3-sync-action@master
         with:
