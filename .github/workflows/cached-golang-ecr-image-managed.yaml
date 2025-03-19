@@ -138,7 +138,6 @@ jobs:
           verb: 'tests'
       - run: |
           sha256sum $(find . -name go.sum)
-          sha256sum **/go.sum
           echo ${{ hashFiles('**/go.sum') }}
       - run: exit -1 
 
