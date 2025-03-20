@@ -161,7 +161,7 @@ jobs:
           du -sh ${{ steps.cache.outputs.go-build }}
           du -sh ${{ steps.cache.outputs.go-mod }}
 
-      - name: Go Build App 
+      - name: Go Build [APP_NAME] 
         if: inputs.app-name != '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
@@ -169,4 +169,10 @@ jobs:
           GOARCH: arm64
           CGO_ENABLED: 0
         run: |
-            make ci-build-${{ inputs.app-name }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
+          COMMAND=$(make --dry-run ci-build-${{ inputs.app-name }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE})
+          COMMAND=$(echo "$COMMAND" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
+          if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
+              COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
+          fi
+          echo "$COMMAND"
+          echo "$COMMAND" | bash
