@@ -56,12 +56,14 @@ jobs:
             ${{ steps.cache.outputs.go-mod }}
           key: ${{ steps.cache.outputs.cache-key }}
 
-      - uses: actions/setup-go@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         with:
-          go-version: ${{ steps.cache.outputs.go-version-long }}
+          go-version: ${{ steps.cache.outputs.go-version }}
 
-      - name: Set up QEMU
+      - name: Setup QEMU
+        if: steps.cache.outputs.is-invoker == 'no'
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
@@ -123,12 +125,13 @@ jobs:
             fi
           done
 
-      - uses: actions/setup-go@v2
+      - name: Setup Go
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
+        uses: actions/setup-go@v2
         with:
-          go-version: ${{ steps.cache.outputs.go-version-long }}
+          go-version: ${{ steps.cache.outputs.go-version }}
 
-      - name: Set up QEMU
+      - name: Setup QEMU
         if: steps.cache.outputs.is-invoker == 'no'
         uses: docker/setup-qemu-action@v2
         with:
