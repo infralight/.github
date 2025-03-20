@@ -41,7 +41,7 @@ jobs:
         uses: infralight/.github/.github/actions/calc-cache-vars@10xx
         with:
           app-name: ${{ inputs.app-name }}
-          architecture: ${{ inputs.architecture }}
+          architecture: arm64
           go-version: ${{ inputs.go-version }}
           verb: 'tests'
           is-cache-manager: true
