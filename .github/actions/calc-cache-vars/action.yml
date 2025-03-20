@@ -21,6 +21,9 @@ inputs:
   verb:
     description: "The verb of the CI/CD pipeline [build, test]"
     required: true
+  is-cache-manager:
+    description: "Export Only Firefly Cache Manager Variables"
+    default: "false"
 
 runs:
   using: "composite"
@@ -37,6 +40,7 @@ runs:
         OS_RUNNER_KEY: ${{ inputs.os-runner-key }}
         VERB: ${{ inputs.verb }}
         MONO_GO_SUM_HASH: ${{ hashFiles('**/go.sum') }}
+        IS_CACHE_MANAGER: ${{ inputs.is-cache-manager }}
 
 outputs:
   go-build:
