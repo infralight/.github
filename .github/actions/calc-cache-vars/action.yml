@@ -43,6 +43,9 @@ runs:
         IS_CACHE_MANAGER: ${{ inputs.is-cache-manager }}
 
 outputs:
+  vars:
+    value: ${{ steps.golang.outputs }}
+    description: "Cache Variables"
   go-build:
     value: ${{ steps.golang.outputs.go-build }}
     description: "The path to the Go build cache"

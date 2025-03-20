@@ -139,12 +139,12 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ steps.cache.outputs.go-build }}
-            ${{ steps.cache.outputs.go-mod }}
-          key: ${{ steps.cache.outputs.cache-key }}
+            ${{ steps.cache.outputs.vars.go-build }}
+            ${{ steps.cache.outputs.vars.go-mod }}
+          key: ${{ steps.cache.outputs.vars.cache-key }}
           restore-keys: |
-            ${{ steps.cache.outputs.cache-key-any }}
-            ${{ steps.cache.outputs.cache-key-any2 }}
+            ${{ steps.cache.outputs.vars.cache-key-any }}
+            ${{ steps.cache.outputs.vars.cache-key-any2 }}
 
       - uses: actions/setup-go@v2
         with:
