@@ -11,7 +11,7 @@ echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
 # FIRELY-CACHE-MANAGER Variables Modifications
 if [ "$IS_CACHE_MANAGER" == "true" ]; then
     is_invoker=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${APP_NAME}" = "*" ]; then echo "yes"; else echo "no"; fi)
-    echo "is_invoker=${is_invoker}" >> "$GITHUB_OUTPUT"
+    echo "is-invoker=${is_invoker}" >> "$GITHUB_OUTPUT"
     # Override GO_VERSION from go.mod
     if [ "$target" == "MONO_REPO" ]; then
         GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
