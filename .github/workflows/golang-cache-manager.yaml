@@ -37,7 +37,7 @@ jobs:
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
 
       - name: Go Cache Preflights
-        id: cache-init
+        id: cache
         uses: infralight/.github/.github/actions/calc-cache-vars@10xx
         with:
           app-name: ${{ inputs.app-name }}
@@ -47,19 +47,19 @@ jobs:
           is-cache-manager: true
 
       - name: Go Cache Restore
-        if: steps.cache-init.outputs.is-invoker == 'no'
+        if: steps.cache.outputs.is-invoker == 'no'
         id: go-cache-restore
         uses: actions/cache@v4
         with:
           path: |
-            ${{ steps.cache-init.outputs.go-build }}
-            ${{ steps.cache-init.outputs.go-mod }}
-          key: ${{ steps.cache-init.outputs.cache-key }}
+            ${{ steps.cache.outputs.go-build }}
+            ${{ steps.cache.outputs.go-mod }}
+          key: ${{ steps.cache.outputs.cache-key }}
 
       - uses: actions/setup-go@v2
-        if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache-init.outputs.is-invoker == 'no'
+        if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         with:
-          go-version: ${{ steps.cache-init.outputs.go-version-long }}
+          go-version: ${{ steps.cache.outputs.go-version-long }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -67,7 +67,7 @@ jobs:
           platforms: "arm64"
         
       - name: Go Run Tests 
-        if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache-init.outputs.is-invoker == 'no'
+        if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         run: |
           if [ "${{ inputs.app-name }}" != "*" ]; then
             make ${{ format('test-{0}', inputs.app-name) }}
@@ -89,48 +89,27 @@ jobs:
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
 
       - name: Go Cache Preflights
-        id: cache-init
-        env:
+        id: cache
+        uses: infralight/.github/.github/actions/calc-cache-vars@10xx
+        with:
+          app-name: ${{ inputs.app-name }}
+          architecture: arm64
+          go-version: ${{ inputs.go-version }}
           verb: 'build'
-        run: |
-          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ inputs.app-name }}":"*"}')
-          CALLER=$(if [ $(find . -name go.mod | wc -l) -gt 1 ] && [ "${{ inputs.app-name }}" = "*" ]; then echo "yes"; else echo "no"; fi)
-
-          echo "caller=${CALLER}" >> "$GITHUB_OUTPUT"
-          [ "$CALLER" = "yes" ] && exit 0
-
-          if [ "${{ inputs.app-name }}" != "*" ]; then
-            GO_VERSION_LONG=${{ inputs.go-version }}
-            GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
-            APP_DIR="$(make --dry-run ci-build-${{ inputs.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
-            APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
-            GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
-            CACHE_KEY="golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)"
-          else
-            GO_VERSION_LONG=$(grep '^go ' go.mod | awk '{print $2}')
-            GO_VERSION=$(echo $GO_VERSION_LONG | cut -d'.' -f1-2)
-            CACHE_KEY="golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)"
-          fi
-
-          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "go-version-long=${GO_VERSION_LONG}" >> "$GITHUB_OUTPUT"
-          echo "go-version=${GO_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
-          echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
-          echo "cache-key=${CACHE_KEY}" >> "$GITHUB_OUTPUT"
+          is-cache-manager: true
 
       - name: Go Cache Restore
-        if: steps.cache-init.outputs.caller == 'no'
+        if: steps.cache.outputs.is-invoker == 'no'
         id: go-cache-restore
         uses: actions/cache@v4
         with:
           path: |
-            ${{ steps.cache-init.outputs.go-build }}
-            ${{ steps.cache-init.outputs.go-mod }}
-          key: ${{ steps.cache-init.outputs.cache-key }}
+            ${{ steps.cache.outputs.go-build }}
+            ${{ steps.cache.outputs.go-mod }}
+          key: ${{ steps.cache.outputs.cache-key }}
 
       - name: Call Recurisve Build Cache
-        if: steps.cache-init.outputs.caller == 'yes'
+        if: steps.cache.outputs.is-invoker == 'yes'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -145,25 +124,29 @@ jobs:
           done
 
       - uses: actions/setup-go@v2
-        if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache-init.outputs.caller == 'no'
+        if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         with:
-          go-version: ${{ steps.cache-init.outputs.go-version-long }}
+          go-version: ${{ steps.cache.outputs.go-version-long }}
 
       - name: Set up QEMU
+        if: steps.cache.outputs.is-invoker == 'no'
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
 
-      - name: Go Download and Build All 
-        if: inputs.app-name == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache-init.outputs.caller == 'no'
+      - name: Go Build All Apps [MONO_REPO]
+        if: inputs.app-name == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
           GOOS: linux
           GOARCH: arm64
           CGO_ENABLED: 0
         run: |
+
+          # Download all dependencies
           go mod download
 
+          # Build all apps in the mono repo
           targets="ci-build-cache $(grep '^ci-build-' [Mm]akefile | cut -d' ' -f1 | tr -d ':')"
           for target in $targets; do
               COMMAND=$(make --dry-run "$target" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
@@ -174,36 +157,16 @@ jobs:
               bash -c "$COMMAND" || continue
           done
 
+          # Print cache sizes
+          du -sh ${{ steps.cache.outputs.go-build }}
+          du -sh ${{ steps.cache.outputs.go-mod }}
 
-          du -sh ${{ steps.cache-init.outputs.go-build }}
-          du -sh ${{ steps.cache-init.outputs.go-mod }}
-
-      - name: Go Build
-        if: steps.go-cache-restore.outputs.cache-hit != 'true' && env.architecture == 'arm64' && steps.cache-init.outputs.caller == 'no'
+      - name: Go Build App 
+        if: inputs.app-name != '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+          GOOS: linux
+          GOARCH: arm64
+          CGO_ENABLED: 0
         run: |
-
-          if [ "${{ inputs.app-name }}" != "*" ]; then
-            make ci-build-${{ inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
-            exit 0
-          fi
-
-          # Run all targets
-          targets="ci-build-cache $(grep '^ci-build-' [Mm]akefile | cut -d' ' -f1 | tr -d ':')"
-          for target in $targets; do
-              # Check if target exists in makefile
-              if ! make --dry-run "$target" &>/dev/null; then
-                continue 
-              fi
-
-              COMMAND=$(make --dry-run "$target" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
-              if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
-                  COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
-              fi
-              echo "$COMMAND"
-              if bash -c "$COMMAND" 2>/dev/null; then
-                  break
-              fi
-          done
-
+            make ci-build-${{ inputs.app-name }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
