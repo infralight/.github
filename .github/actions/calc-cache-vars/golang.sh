@@ -20,7 +20,7 @@ fi
 
 # Trim Patch Version (e.g. 1.23.0 -> 1.23)
 go_version_short=$(echo $GO_VERSION | cut -d'.' -f1-2)
-key_prefix="golang-v$go_version_short-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB-"
+key_prefix="golang-v$go_version_short-$OS_RUNNER_KEY-$ARCHITECTURE-$VERB"
 
 # Export Go Version
 echo "go-version=$GO_VERSION" >> "$GITHUB_OUTPUT"
@@ -29,7 +29,7 @@ echo "go-version-short=$go_version_short" >> "$GITHUB_OUTPUT"
 # Export Cache Keys
 if [ "$target" == "MONO_REPO" ]; then
     checksum=$(echo $MONO_GO_SUM_HASH | cut -c 1-6)
-    echo "cache-key=$key_prefix-checksum-$checksum"
+    echo "cache-key=$key_prefix-checksum-$checksum" >> "$GITHUB_OUTPUT"
     echo "cache-key-any=$key_prefix-checksum-" >> "$GITHUB_OUTPUT"
 else
     app_dir="$(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
@@ -38,5 +38,5 @@ else
     checksum=$(sha256sum $go_sum_path | awk '{print $1}' | cut -c 1-6)
     echo "cache-key=$key_prefix-$APP_NAME-checksum-$checksum" >> "$GITHUB_OUTPUT"
     echo "cache-key-any=$key_prefix-$APP_NAME-checksum-" >> "$GITHUB_OUTPUT"
-    echo "cache-key-any2=$key_prefix" >> "$GITHUB_OUTPUT"
+    echo "cache-key-any2=$key_prefix-" >> "$GITHUB_OUTPUT"
 fi
