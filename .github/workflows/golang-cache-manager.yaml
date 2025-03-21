@@ -137,7 +137,7 @@ jobs:
         with:
           platforms: "arm64"
 
-      - name: Go Build All Apps [MONO_REPO]
+      - name: Go Build All Apps (MONO_REPO)
         if: inputs.app-name == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
@@ -164,7 +164,7 @@ jobs:
           du -sh ${{ steps.cache.outputs.go-build }}
           du -sh ${{ steps.cache.outputs.go-mod }}
 
-      - name: Go Build [APP_NAME] 
+      - name: Go Build (APP_NAME) 
         if: inputs.app-name != '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
