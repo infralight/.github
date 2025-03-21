@@ -6,9 +6,6 @@ echo "target=$([ "$target" = "MONO_REPO" ] && echo "*" || echo "$target")" >> "$
 echo "$target"
 echo "target=$([ "$target" = "MONO_REPO" ] && echo "*" || echo "$target")" 
 
-echo "$target"
-echo "target=$([ "$target" = "MONO_REPO" ] && echo "*" || echo "$target")" 
-
 # Export Go Cache Paths
 echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
 echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
