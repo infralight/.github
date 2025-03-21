@@ -121,7 +121,6 @@ jobs:
               app_name=$(grep 'app-name:' "$file" | sed 's/.*app-name: \(.*\)/\1/')
               if [[ $app_name != *"$"* ]]; then
                 gh workflow run firefly-cache-manager.yaml -f app-name="$app_name" -f go-version="$go_version"
-                echo "gh workflow run firefly-cache-manager.yaml -f app-name='$app_name' -f go-version='$go_version'"
               fi
             fi
           done
