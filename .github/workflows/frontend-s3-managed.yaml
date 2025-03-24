@@ -51,7 +51,7 @@ jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Frontend - Build & Deploy"
-    runs-on: [self-hosted, "${{ inputs.environment }}", "frontend"]
+    runs-on: [self-hosted, "${{ inputs.environment }}"]
     steps:
       - name: Git Checkout
         uses: actions/checkout@v3.1.0
