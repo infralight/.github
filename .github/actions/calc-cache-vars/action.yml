@@ -1,0 +1,81 @@
+name: Calculate Cache Variables
+
+description: "Calculates cache variables for extracting cache keys, paths, and other cache-related parameters"
+
+inputs:
+  app-name:
+    description: "The name of the application"
+    required: true
+  architecture:
+    description: "The architecture of the CI/CD pipeline"
+    default: "arm64"
+  go-version:
+    description: "The version of Go to use"
+    default: "1.23"
+  language:
+    description: "The language of the CI/CD pipeline"
+    default: "golang"
+  os-runner-key:
+    description: "The OS of the runner"
+    default: "linux"
+  verb:
+    description: "The verb of the CI/CD pipeline [build, test]"
+    required: true
+  is-cache-manager:
+    description: "Export Only Firefly Cache Manager Variables"
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Calculate Golang Cache Variables
+      if: inputs.language == 'golang'
+      id: golang
+      run: ${{ github.action_path }}/golang.sh
+      shell: bash
+      env:
+        APP_NAME: ${{ inputs.app-name }}
+        ARCHITECTURE: ${{ inputs.architecture }}
+        GO_VERSION: ${{ inputs.go-version }}
+        OS_RUNNER_KEY: ${{ inputs.os-runner-key }}
+        VERB: ${{ inputs.verb }}
+        MONO_GO_SUM_HASH: ${{ hashFiles('**/go.sum') }}
+        IS_CACHE_MANAGER: ${{ inputs.is-cache-manager }}
+    - name: dummy
+      id: dummy
+      if: 1 == 2
+      run: echo "dummy"
+      shell: bash
+
+
+outputs:
+  go-build:
+    value: ${{ steps.golang.outputs.go-build }}
+    description: "The path to the Go build cache"
+  go-mod:
+    value: ${{ steps.golang.outputs.go-mod }}
+    description: "The path to the Go module cache"
+  go-version:
+    value: ${{ steps.golang.outputs.go-version }}
+    description: "The version of Go"
+  go-version-short:
+    value: ${{ steps.golang.outputs.go-version-short }}
+    description: "The short version of Go"
+  cache-key:
+    value: ${{ steps.golang.outputs.cache-key }}
+    description: "The cache key"
+  cache-key-any:
+    value: ${{ steps.golang.outputs.cache-key-any }}
+    description: "The cache key for any"
+  cache-key-any2:
+    value: ${{ steps.golang.outputs.cache-key-any2 }}
+    description: "The cache key for any2"
+  target:
+    value: ${{ steps.golang.outputs.target }}
+    description: "The target"
+  is-invoker:
+    value: ${{ steps.golang.outputs.is-invoker }}
+    description: "Is the invoker"
+  dummy:
+    value: ${{ steps.dummy.outputs.dummy }}
+    description: "Dummy"

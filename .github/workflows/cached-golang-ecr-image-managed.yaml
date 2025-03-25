@@ -117,9 +117,6 @@ on:
       CI_ACCOUNT_ID:
         required: true
 
-env:
-  cache-runner-key: 'linux'
-
 jobs:
   tests:
     name: Run Tests
@@ -127,47 +124,39 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Go Cache Preflights
-        id: go-cache-paths
-        env:
-          verb: 'tests'
+        id: cache
+        uses: infralight/.github/.github/actions/calc-cache-vars@10xx
+        with:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
-        run: |
-          GO_VERSION=$(echo ${{ inputs.go-version }} | cut -d'.' -f1-2)
-          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ env.app-name }}":"*"}')
-          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
-          echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
-          if [ "$TARGET" == "*" ]; then
-            echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-" >> "$GITHUB_OUTPUT"
-          else
-            APP_DIR="$(make --dry-run ci-build-${{ env.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
-            APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
-            GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
-            echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any2=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-" >> "$GITHUB_OUTPUT"
-          fi
+          architecture: ${{ inputs.architecture }}
+          go-version: ${{ inputs.go-version }}
+          verb: 'tests'
+
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ steps.go-cache-paths.outputs.go-build }}
-            ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ steps.go-cache-paths.outputs.cache-key }}
+            ${{ steps.cache.outputs.go-build }}
+            ${{ steps.cache.outputs.go-mod }}
+          key: ${{ steps.cache.outputs.cache-key }}
           restore-keys: |
-            ${{ steps.go-cache-paths.outputs.cache-key-any }}
-            ${{ steps.go-cache-paths.outputs.cache-key-any2 }}
+            ${{ steps.cache.outputs.cache-key-any }}
+            ${{ steps.cache.outputs.cache-key-any2 }}
+
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
+
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
@@ -181,89 +170,88 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
+
       - name: Configure Git for Private Modules
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+
       - name: Go Cache Preflights
-        id: go-cache-paths
-        env:
-          verb: 'build'
+        id: cache
+        uses: infralight/.github/.github/actions/calc-cache-vars@10xx
+        with:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
-        run: |
-          GO_VERSION=$(echo ${{ inputs.go-version }} | cut -d'.' -f1-2)
-          TARGET=$(find . -name go.mod | wc -l | awk '{print ($1>1)?"${{ env.app-name }}":"*"}')
-          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "go-build=/home/runner/.cache/go-build" >> "$GITHUB_OUTPUT"
-          echo "go-mod=/home/runner/go/pkg/mod" >> "$GITHUB_OUTPUT"
-          if [ "$TARGET" == "*" ]; then
-            echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-$(echo ${{ hashFiles('**/go.sum') }} | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-checksum-" >> "$GITHUB_OUTPUT"
-          else
-            APP_DIR="$(make --dry-run ci-build-${{ env.app-name }} 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
-            APP_DIR="$(dirname $APP_DIR 2>/dev/null || echo)"
-            GO_SUM="$([ -z "$APP_DIR" ] && ls **/go.sum | head -n 1 || echo "$APP_DIR/go.sum")"
-            echo "cache-key=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-$(sha256sum $GO_SUM | awk '{print $1}' | cut -c 1-6)" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-${{ inputs.app-name }}-checksum-" >> "$GITHUB_OUTPUT"
-            echo "cache-key-any2=golang-v${GO_VERSION}-${{ env.cache-runner-key }}-${{ inputs.architecture }}-${{ env.verb }}-" >> "$GITHUB_OUTPUT"
-          fi
+          architecture: ${{ inputs.architecture }}
+          go-version: ${{ inputs.go-version }}
+          verb: 'build'
+
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ steps.go-cache-paths.outputs.go-build }}
-            ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ steps.go-cache-paths.outputs.cache-key }}
+            ${{ steps.cache.outputs.go-build }}
+            ${{ steps.cache.outputs.go-mod }}
+          key: ${{ steps.cache.outputs.cache-key }}
           restore-keys: |
-            ${{ steps.go-cache-paths.outputs.cache-key-any }}
-            ${{ steps.go-cache-paths.outputs.cache-key-any2 }}
+            ${{ steps.cache.outputs.cache-key-any }}
+            ${{ steps.cache.outputs.cache-key-any2 }}
+
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
+
       - name: Go Cache Build 
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         continue-on-error: true
         run: |
           gh workflow run firefly-cache-manager.yaml \
-          -f branch="$(git branch --show-current)" -f app-name="${{ steps.go-cache-paths.outputs.target }}" -f go-version=${{ inputs.go-version }}
+          -f branch="$(git branch --show-current)" -f app-name="${{ steps.cache.outputs.target }}" -f go-version=${{ inputs.go-version }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
       - name: Set Outputs
         id: vars
         run: |
           echo ::set-output name=tag::${GITHUB_REF#refs/*/}
           echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
           aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
           aws-region: ${{ secrets.CI_REGION }}
+
       - name: Pre-Run
         if: ${{ inputs.pre-run != '' }}
         run: ${{ inputs.pre-run }}
+
       - name: Go Build
         if: ${{ !inputs.arm64 }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
           make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
+
       - name: Generate ECR Name
         id: ecr-name
         run: |
           echo "ECR_NAME=${{ inputs.ecr-name != '' && inputs.ecr-name || inputs.app-name }}" >> $GITHUB_ENV
+
       - name: Docker Build Image
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
         run: |
           make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
+
       - name: Set up QEMU
         if: ${{ inputs.arm64 }}
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
+
       - name: Go Build [arm64]
         if: ${{ inputs.arm64 }}
         env:
@@ -276,6 +264,7 @@ jobs:
           fi
           echo "$COMMAND"
           echo "$COMMAND" | bash
+
       - name: Docker Build Image [arm64]
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
@@ -287,6 +276,7 @@ jobs:
 
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
+
       - name: "Run Trivy vulnerability scanner"
         if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
         uses: aquasecurity/trivy-action@master
@@ -300,6 +290,7 @@ jobs:
           output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
         # env:
         #   TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
+
       - name: Upload Trivy scan results to S3
         if: ${{ inputs.environment == 'dev' }}
         uses: jakejarvis/s3-sync-action@master
@@ -310,14 +301,17 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
+
       - name: Login ECR
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
+
       - name: Docker Push to ECR
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
           docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
           if ${{inputs.latest}}; then docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest; fi
+
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
