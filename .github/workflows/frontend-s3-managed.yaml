@@ -51,7 +51,7 @@ jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Frontend - Build & Deploy"
-    runs-on: [self-hosted, ARM64, "${{ inputs.environment }}"]
+    runs-on: [self-hosted, frontend, "${{ inputs.environment }}"]
     steps:
       - name: Git Checkout
         uses: actions/checkout@v3.1.0
@@ -74,16 +74,16 @@ jobs:
           SSO_DOMAINS_AZURE: ${{ vars.SSO_DOMAINS_AZURE }}
           SSO_DOMAINS_PING: ${{ vars.SSO_DOMAINS_PING }}
 
-      # - name: Node Cache
-      #   uses: actions/cache@v2
-      #   id: npm-cache
-      #   with:
-      #     path: |
-      #       **/node_modules
-      #       **/.eslintcache
-      #     key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-npm-
+      - name: Node Cache
+        uses: actions/cache@v4
+        id: npm-cache
+        with:
+          path: |
+            **/node_modules
+            **/.eslintcache
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
       
       - name: Frontend Build (npm)
         env:
