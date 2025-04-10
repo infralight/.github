@@ -73,6 +73,17 @@ jobs:
           SSO_DOMAINS_OKTA: ${{ vars.SSO_DOMAINS_OKTA }}
           SSO_DOMAINS_AZURE: ${{ vars.SSO_DOMAINS_AZURE }}
           SSO_DOMAINS_PING: ${{ vars.SSO_DOMAINS_PING }}
+
+      - name: Node Cache
+        uses: actions/cache@v2
+        id: npm-cache
+        with:
+          path: |
+            **/node_modules
+            **/.eslintcache
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
       
       - name: Frontend Build (npm)
         env:
