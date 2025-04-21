@@ -117,6 +117,10 @@ on:
       CI_ACCOUNT_ID:
         required: true
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   tests:
     name: Run Tests
@@ -166,7 +170,7 @@ jobs:
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
       app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
     steps:
-      - name: Checkout 
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
@@ -201,7 +205,7 @@ jobs:
         with:
           go-version: ${{ inputs.go-version }}
 
-      - name: Go Cache Build 
+      - name: Go Cache Build
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         continue-on-error: true
         run: |
@@ -217,10 +221,10 @@ jobs:
           echo "::set-output name=date::$(date +'%Y-%m-%d')"
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/github-actions-oidc
+          role-session-name: runner
           aws-region: ${{ secrets.CI_REGION }}
 
       - name: Pre-Run
