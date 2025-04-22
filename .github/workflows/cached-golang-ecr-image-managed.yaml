@@ -227,6 +227,8 @@ jobs:
           role-session-name: runner
           aws-region: ${{ secrets.CI_REGION }}
 
+      - run: env
+
       - name: Pre-Run
         if: ${{ inputs.pre-run != '' }}
         run: ${{ inputs.pre-run }}
