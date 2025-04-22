@@ -85,6 +85,7 @@ jobs:
     steps:
       - run: |
           make test-${{ inputs.app-name }}
+
   build:
     environment: ${{ inputs.environment }}
     name: "Build & Push ECR Docker Image "
@@ -96,9 +97,11 @@ jobs:
       tag: ${{ steps.build.outputs.tag }}
     steps:
       - uses: actions/checkout@v2
+
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+
       - name: Build Docker Image
         id: build
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
@@ -107,11 +110,13 @@ jobs:
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
           echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
+
       - name: Set up QEMU
         if: ${{ inputs.arm64 }}
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
+
       - name: Build Docker Image [arm64]
         id: build-arm64
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
@@ -123,6 +128,7 @@ jobs:
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
           echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
+
       - name: "Run Trivy vulnerability scanner"
         if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
         uses: aquasecurity/trivy-action@master
@@ -134,6 +140,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+
       - name: Upload Trivy scan results to S3
         if: ${{ inputs.environment == 'dev' }}
         uses: jakejarvis/s3-sync-action@master
@@ -146,7 +153,7 @@ jobs:
           AWS_REGION: ${{ secrets.CI_REGION }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
           role-session-name: runner
@@ -155,12 +162,12 @@ jobs:
       - name: AWS ECR Login
         uses: aws-actions/amazon-ecr-login@v2
 
-        id: login-ecr
-      - name: "upload image"
+      - name: Push Docker Image to ECR
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
           docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
           if ${{inputs.latest}}; then docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest; fi
+
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}

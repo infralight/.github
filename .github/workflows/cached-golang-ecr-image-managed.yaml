@@ -306,10 +306,10 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
 
-      - name: Login ECR
+      - name: AWS ECR Login
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Docker Push to ECR
+      - name: Push Docker Image to ECR
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
           docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
