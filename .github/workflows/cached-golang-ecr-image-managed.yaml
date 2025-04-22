@@ -297,6 +297,16 @@ jobs:
           aws-region: ${{ secrets.CI_REGION }}
           output-credentials: true
 
+      - run: aws sts get-caller-identity
+
+      - name: Configure AWS Credentials 2
+        uses: aws-actions/configure-aws-credentials@v4.1.0
+        with:
+          aws-region: ${{ secrets.CI_REGION }}
+          aws-access-key-id: ${{ steps.aws-creds.outputs.aws-access-key-id }}
+          aws-secret-access-key: ${{ steps.aws-creds.outputs.aws-secret-access-key }}
+          aws-session-token: ${{ steps.aws-creds.outputs.aws-session-token }}
+
       - name: Upload Trivy Scan Results to S3
         if: ${{ inputs.environment == 'dev' }}
         uses: jakejarvis/s3-sync-action@master
@@ -308,6 +318,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ steps.aws-creds.outputs.aws-secret-access-key }}
           AWS_SESSION_TOKEN: ${{ steps.aws-creds.outputs.aws-session-token}}
           AWS_REGION: ${{ secrets.CI_REGION }}
+
 
       - name: AWS ECR Login
         uses: aws-actions/amazon-ecr-login@v2
