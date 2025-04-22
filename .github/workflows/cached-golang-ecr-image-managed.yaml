@@ -220,15 +220,6 @@ jobs:
           echo "tag=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
           echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
-          role-session-name: runner
-          aws-region: ${{ secrets.CI_REGION }}
-
-      - run: env
-
       - name: Pre-Run
         if: ${{ inputs.pre-run != '' }}
         run: ${{ inputs.pre-run }}
@@ -297,6 +288,15 @@ jobs:
         # env:
         #   TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
 
+      - name: Configure AWS Credentials
+        id: aws-creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
+          role-session-name: runner
+          aws-region: ${{ secrets.CI_REGION }}
+          output-credentials: true
+
       - name: Upload Trivy Scan Results to S3
         if: ${{ inputs.environment == 'dev' }}
         uses: jakejarvis/s3-sync-action@master
@@ -304,8 +304,9 @@ jobs:
           args: --exclude '*' --include ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
         env:
           AWS_S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
-          # AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
-          # AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
+          AWS_ACCESS_KEY_ID: ${{ steps.aws-creds.outputs.aws-access-key-id }}"
+          AWS_SECRET_ACCESS_KEY: ${{ steps.aws-creds.outputs.aws-secret-access-key }}"
+          AWS_SESSION_TOKEN: ${{ steps.aws-creds.outputs.aws-session-token}}"
           AWS_REGION: ${{ secrets.CI_REGION }}
 
       - name: AWS ECR Login
