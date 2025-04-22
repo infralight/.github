@@ -217,8 +217,8 @@ jobs:
       - name: Set Outputs
         id: vars
         run: |
-          echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-          echo "::set-output name=date::$(date +'%Y-%m-%d')"
+          echo "tag=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
