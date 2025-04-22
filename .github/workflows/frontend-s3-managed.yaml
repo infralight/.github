@@ -65,7 +65,11 @@ jobs:
         uses: actions/setup-node@v3.5.0
         with:
           node-version: ${{ inputs.node-version }}
-
+      - run: aws sts get-caller-identity
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
+          AWS_REGION: ${{ secrets.CI_REGION }}
       - name: Setup config.js With Environment
         run: ./scripts/set_vars.sh
         shell: bash
