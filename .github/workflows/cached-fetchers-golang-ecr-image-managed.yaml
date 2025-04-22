@@ -117,6 +117,10 @@ on:
       CI_ACCOUNT_ID:
         required: true
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   tests:
     name: Run Tests
@@ -166,7 +170,7 @@ jobs:
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
       app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
     steps:
-      - name: Checkout 
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
@@ -201,7 +205,7 @@ jobs:
         with:
           go-version: ${{ inputs.go-version }}
 
-      - name: Go Cache Build 
+      - name: Go Cache Build
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
         continue-on-error: true
         run: |
@@ -213,14 +217,14 @@ jobs:
       - name: Set Outputs
         id: vars
         run: |
-          echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-          echo "::set-output name=date::$(date +'%Y-%m-%d')"
+          echo "tag=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
+          role-session-name: runner
           aws-region: ${{ secrets.CI_REGION }}
 
       - name: Pre-Run
@@ -303,8 +307,7 @@ jobs:
           AWS_REGION: ${{ secrets.CI_REGION }}
 
       - name: Login ECR
-        uses: aws-actions/amazon-ecr-login@v1
-        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Docker Push to ECR
         if: (env.HAVE_RUN_CMD == 'false')
