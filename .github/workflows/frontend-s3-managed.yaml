@@ -55,12 +55,12 @@ jobs:
     steps:
       - name: Git Checkout
         uses: actions/checkout@v3.1.0
-      
+
       - name: "Setup Node ${{ inputs.node-version }}"
         uses: actions/setup-node@v3.5.0
         with:
           node-version: ${{ inputs.node-version }}
-          
+
       - name: Setup config.js With Environment
         run: ./scripts/set_vars.sh
         shell: bash
@@ -84,7 +84,7 @@ jobs:
           key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-npm-
-      
+
       - name: Frontend Build (npm)
         env:
           CI: "false"
@@ -92,7 +92,14 @@ jobs:
         run: |
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
           npm run build
-      
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
+          role-session-name: runner
+          aws-region: ${{ secrets.CI_REGION }}
+
       - name: Upload Files
         uses: jakejarvis/s3-sync-action@master
         with:
@@ -100,19 +107,15 @@ jobs:
         env:
           SOURCE_DIR: 'build'
           AWS_S3_BUCKET: ${{ secrets.CI_FRONTEND_BUCKET }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
-      
+
       - name: Invalidate Cloudfront
         uses: docker://public.ecr.aws/firefly/cloudfront-invalidation:v0.0.5
         env:
           PATHS: '/*'
-          AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
           DISTRIBUTION_ID: ${{ secrets.CI_DISTRIBUTION_ID }}
-      
+
       - name: Slack Notification
         if: ${{ success() }}
         uses: rtCamp/action-slack-notify@v2
