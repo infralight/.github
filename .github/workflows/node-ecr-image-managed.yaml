@@ -72,6 +72,11 @@ on:
         required: true
       CI_ACCOUNT_ID:
         required: true
+
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   tests:
     if: inputs.run-tests == true
@@ -139,14 +144,17 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
-      - name: "configure aws credentials"
+
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
+          role-session-name: runner
           aws-region: ${{ secrets.CI_REGION }}
-      - name: "login ecr"
-        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: AWS ECR Login
+        uses: aws-actions/amazon-ecr-login@v2
+
         id: login-ecr
       - name: "upload image"
         if: (env.HAVE_RUN_CMD == 'false')
