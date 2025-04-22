@@ -154,7 +154,7 @@ jobs:
         with:
           go-version: ${{ inputs.go-version }}
 
-      - name: Configure git for private modules
+      - name: Configure Git for Private Modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
 
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
