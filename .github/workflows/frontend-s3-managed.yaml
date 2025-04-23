@@ -65,7 +65,6 @@ jobs:
         uses: actions/setup-node@v3.5.0
         with:
           node-version: ${{ inputs.node-version }}
-      - run: aws sts get-caller-identity
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
@@ -102,6 +101,14 @@ jobs:
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
           npm run build
 
+      - name: Install AWS Cli
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o /tmp/awscliv2.zip
+          unzip -q /tmp/awscliv2.zip -d /tmp
+          rm /tmp/awscliv2.zip
+          sudo /tmp/aws/install --update
+          rm -rf /tmp/aws/
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         env:
@@ -112,13 +119,16 @@ jobs:
           aws-region: ${{ secrets.CI_REGION }}
 
       - name: Upload Files
-        uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --acl public-read --follow-symlinks --delete --exclude='files/*'
         env:
-          SOURCE_DIR: 'build'
-          AWS_S3_BUCKET: ${{ secrets.CI_FRONTEND_BUCKET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
+          AWS_S3_BUCKET: ${{ secrets.CI_FRONTEND_BUCKET }}
+        run: |
+          aws s3 sync build s3://$AWS_S3_BUCKET \
+            --acl public-read \
+            --follow-symlinks \
+            --delete \
+            --exclude 'files/*' \
+            --region $AWS_REGION
 
       - name: Invalidate Cloudfront
         uses: docker://public.ecr.aws/firefly/cloudfront-invalidation:v0.0.5
