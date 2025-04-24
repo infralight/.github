@@ -129,6 +129,13 @@ jobs:
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
           echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
+          role-session-name: runner
+          aws-region: ${{ secrets.CI_REGION }}
+
       - name: Run Trivy Vulnerability Scanner
         if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
         uses: aquasecurity/trivy-action@master
@@ -147,13 +154,6 @@ jobs:
           TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
           S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
-          role-session-name: runner
-          aws-region: ${{ secrets.CI_REGION }}
 
       - name: AWS ECR Login
         uses: aws-actions/amazon-ecr-login@v2
