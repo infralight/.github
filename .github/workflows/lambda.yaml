@@ -33,6 +33,10 @@ on:
         required: true
       CI_ACCOUNT_ID:
         required: true
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   lambda:
     environment: ${{ inputs.environment }}
