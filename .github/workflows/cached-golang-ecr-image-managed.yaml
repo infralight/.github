@@ -295,7 +295,6 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
           role-session-name: runner
           aws-region: ${{ secrets.CI_REGION }}
-          output-credentials: true
 
       - name: Upload Trivy Scan Results to S3
         if: ${{ inputs.environment == 'dev' }}
