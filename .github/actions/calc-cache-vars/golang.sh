@@ -14,7 +14,7 @@ if [ "$IS_CACHE_MANAGER" == "true" ]; then
     echo "is-invoker=${is_invoker}" >> "$GITHUB_OUTPUT"
     # Override GO_VERSION from go.mod
     if [ "$target" == "MONO_REPO" ]; then
-        GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
+        GO_VERSION=$((grep '^toolchain ' go.mod || grep '^go ' go.mod) | awk '{print $2}' | sed 's/go//')
     fi
 fi
 

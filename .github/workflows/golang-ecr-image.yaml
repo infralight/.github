@@ -72,32 +72,38 @@ jobs:
       - tests
     steps:
       - uses: actions/checkout@v2
-      - name: "Set up Go"
+
+      - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
-      - name: "[Build] configure git for private modules"
+
+      - name: Configure Git for Private Modules
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
-      - name: "[Build]: configure AWS credentials"
-        uses: aws-actions/configure-aws-credentials@v1
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.ECR_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ECR_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ inputs.aws-region }}
-      - name: "Build: Amazon ECR \"Login\""
-        uses: aws-actions/amazon-ecr-login@v1
-        id: login-ecr-stage
-      - name: "[Build]: build image & upload to ECR stage"
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
+          role-session-name: runner
+          aws-region: ${{ secrets.CI_REGION }}
+
+      - name: AWS ECR Login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push Docker Image to ECR
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
-        run: | 
+        run: |
           docker buildx build . --file ${{ inputs.dockerfile-path }} --tag ${{ inputs.image-name }}:${{ inputs.image-tag }}
           docker push ${{ inputs.image-name }}:${{ inputs.image-tag }}
+
       - name: "[Build]: build image & upload to ECR stage latest tag"
         if: ${{ env.HAVE_RUN_CMD == 'false' }}
         run: |
           docker tag ${{ inputs.image-name }}:${{ inputs.image-tag }} ${{ inputs.image-name }}:latest
           docker push ${{ inputs.image-name }}:latest
+
       - name: "[Build]: build image & upload to ECR stage - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
