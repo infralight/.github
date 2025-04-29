@@ -56,7 +56,8 @@ jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Frontend - Build & Deploy"
-    runs-on: [self-hosted, frontend, "${{ inputs.environment }}"]
+    # runs-on: [self-hosted, frontend, "${{ inputs.environment }}"]
+    runs-on: ubuntu-latest
     steps:
       - name: Git Checkout
         uses: actions/checkout@v3.1.0
@@ -98,18 +99,18 @@ jobs:
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
           npm run build
 
-      - name: Install AWS Cli
-        run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o /tmp/awscliv2.zip
-          unzip -q /tmp/awscliv2.zip -d /tmp
-          rm /tmp/awscliv2.zip
-          sudo /tmp/aws/install --update
-          rm -rf /tmp/aws/
+      # - name: Install AWS Cli
+      #   run: |
+      #     curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o /tmp/awscliv2.zip
+      #     unzip -q /tmp/awscliv2.zip -d /tmp
+      #     rm /tmp/awscliv2.zip
+      #     sudo /tmp/aws/install --update
+      #     rm -rf /tmp/aws/
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         env:
-          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || 'stag' }}
+          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
         with:
           role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
           role-session-name: runner
