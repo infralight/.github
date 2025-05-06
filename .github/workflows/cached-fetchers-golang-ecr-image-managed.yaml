@@ -289,10 +289,11 @@ jobs:
         #   TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
 
       - name: Configure AWS Credentials
-        id: aws-creds
         uses: aws-actions/configure-aws-credentials@v4
+        env:
+          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ inputs.environment }}-github-actions-oidc
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
           role-session-name: runner
           aws-region: ${{ secrets.CI_REGION }}
 
