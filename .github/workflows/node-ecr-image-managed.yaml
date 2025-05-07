@@ -102,6 +102,19 @@ jobs:
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: Install Dependencies
+        run: yarn install --immutable
+
+      - name: Build Backend
+        run: |
+          yarn tsc:full
+          yarn build:all
+
       - name: Build Docker Image
         id: build
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
