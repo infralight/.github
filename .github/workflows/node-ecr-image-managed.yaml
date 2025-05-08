@@ -142,7 +142,7 @@ jobs:
         with:
           image-ref: docker.io/library/tempimage
           format: 'json'
-          exit-code: '0'
+          exit-code: '2'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
