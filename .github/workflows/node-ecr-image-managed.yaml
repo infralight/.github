@@ -27,6 +27,14 @@ on:
         type: boolean
         required: false
         default: true
+      trivy-block:
+        type: boolean
+        required: false
+        default: false
+      dependabot-block:
+        type: boolean
+        required: false
+        default: false        
       custom-tests:
         type: boolean
         required: false
@@ -78,6 +86,14 @@ permissions:
   contents: read
 
 jobs:
+  dependency-review:
+    if: inputs.dependabot
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+      - name: 'Dependency Review'
+        uses: actions/dependency-review-action@v4
   tests:
     if: inputs.run-tests == true
     runs-on: 'ubuntu-latest'
@@ -97,7 +113,6 @@ jobs:
       tag: ${{ steps.build.outputs.tag }}
     steps:
       - uses: actions/checkout@v2
-
       - name: Configure Git for Private Modules
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
@@ -142,7 +157,7 @@ jobs:
         with:
           image-ref: docker.io/library/tempimage
           format: 'json'
-          exit-code: '2'
+          exit-code: ${{ inputs.trivy-block && '2' || '0' }}
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
