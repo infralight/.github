@@ -94,16 +94,16 @@ jobs:
           push: 'origin --force'
       - name: "[ArgoCD]: trigger sync"
         uses: clowdhaus/argo-cd-action/@v2.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
-          env:
-            GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
           command: app sync "${{ env.APP_NAME }}"
           options: --retry-limit 30 --retry-backoff-duration 10s
       - name: "[ArgoCD]: wait for deploy to complete"
         uses: clowdhaus/argo-cd-action/@v2.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
-          env:
-            GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
           command: app wait ${{ env.APP_NAME }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
         uses: rtCamp/action-slack-notify@v2
