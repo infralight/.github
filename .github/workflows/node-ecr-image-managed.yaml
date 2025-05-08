@@ -87,7 +87,7 @@ permissions:
 
 jobs:
   dependency-review:
-    if: inputs.dependabot
+    if: inputs.dependabot-block
     runs-on: 'ubuntu-latest'
     steps:
       - name: 'Checkout Repository'
