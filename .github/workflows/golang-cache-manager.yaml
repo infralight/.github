@@ -1,0 +1,181 @@
+name: Reusable Golang Cache Manager 
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        type: string
+        description: 'Branch name.'
+        default: main
+        required: true
+      app-name:
+        type: string
+        description: 'Target to run.'
+        required: true
+      go-version:
+        type: string
+        description: 'Go version to use.'
+        required: true
+    secrets:
+      GLOBAL_PAT:
+        required: true
+
+env:
+  architecture: 'arm64'
+  cache-runner-key: 'linux-arm64'
+
+jobs:
+  build-tests-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || 'main' }}
+
+      - name: Configure Git for Private Modules
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+
+      - name: Go Cache Preflights
+        id: cache
+        uses: infralight/.github/.github/actions/calc-cache-vars@10xx
+        with:
+          app-name: ${{ inputs.app-name }}
+          architecture: arm64
+          go-version: ${{ inputs.go-version }}
+          verb: 'tests'
+          is-cache-manager: true
+
+      - name: Go Cache Restore
+        if: steps.cache.outputs.is-invoker == 'no'
+        id: go-cache-restore
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.cache.outputs.go-build }}
+            ${{ steps.cache.outputs.go-mod }}
+          key: ${{ steps.cache.outputs.cache-key }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
+        with:
+          go-version: ${{ steps.cache.outputs.go-version }}
+
+      - name: Setup QEMU
+        if: steps.cache.outputs.is-invoker == 'no'
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "arm64"
+        
+      - name: Go Run Tests 
+        if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
+        run: |
+          if [ "${{ inputs.app-name }}" != "*" ]; then
+            make ${{ format('test-{0}', inputs.app-name) }}
+          else
+            make $(grep '^test-' [Mm]akefile | head -1 | cut -d' ' -f1 | tr -d ':')
+          fi
+        env:
+          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+
+  build-app-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || 'main' }}
+
+      - name: Configure Git for Private Modules
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+
+      - name: Go Cache Preflights
+        id: cache
+        uses: infralight/.github/.github/actions/calc-cache-vars@10xx
+        with:
+          app-name: ${{ inputs.app-name }}
+          architecture: arm64
+          go-version: ${{ inputs.go-version }}
+          verb: 'build'
+          is-cache-manager: true
+
+      - name: Go Cache Restore
+        if: steps.cache.outputs.is-invoker == 'no'
+        id: go-cache-restore
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.cache.outputs.go-build }}
+            ${{ steps.cache.outputs.go-mod }}
+          key: ${{ steps.cache.outputs.cache-key }}
+
+      - name: Call Recurisve Build Cache
+        if: steps.cache.outputs.is-invoker == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          for file in .github/workflows/ci-*; do
+            if grep -q "cached-.*golang-.*\.yaml" "$file"; then
+              go_version=$(grep 'go-version:' "$file" | sed 's/.*go-version: \(.*\)/\1/' | tr -d "'")
+              app_name=$(grep 'app-name:' "$file" | sed 's/.*app-name: \(.*\)/\1/')
+              if [[ $app_name != *"$"* ]]; then
+                gh workflow run firefly-cache-manager.yaml -f app-name="$app_name" -f go-version="$go_version"
+              fi
+            fi
+          done
+
+      - name: Setup Go
+        if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ steps.cache.outputs.go-version }}
+
+      - name: Setup QEMU
+        if: steps.cache.outputs.is-invoker == 'no'
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "arm64"
+
+      - name: Go Build All Apps (MONO_REPO)
+        if: inputs.app-name == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
+        env:
+          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+          GOOS: linux
+          GOARCH: arm64
+          CGO_ENABLED: 0
+        run: |
+
+          # Download all dependencies
+          go mod download
+
+          # Build all apps in the mono repo
+          targets="ci-build-cache $(grep '^ci-build-' [Mm]akefile | cut -d' ' -f1 | tr -d ':')"
+          for target in $targets; do
+              COMMAND=$(make --dry-run "$target" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
+              if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
+                  COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
+              fi
+              echo "$COMMAND"
+              bash -c "$COMMAND" || continue
+          done
+
+          # Print cache sizes
+          du -sh ${{ steps.cache.outputs.go-build }}
+          du -sh ${{ steps.cache.outputs.go-mod }}
+
+      - name: Go Build (APP_NAME) 
+        if: inputs.app-name != '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
+        env:
+          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+          GOOS: linux
+          GOARCH: arm64
+          CGO_ENABLED: 0
+        run: |
+          COMMAND=$(make --dry-run ci-build-${{ inputs.app-name }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE})
+          COMMAND=$(echo "$COMMAND" | sed 's/GOARCH\=amd64/GOARCH\=arm64/ig')
+          if [[ "$COMMAND" != *"GOARCH=arm64"* ]]; then
+              COMMAND=$(echo "$COMMAND" | sed -E 's/go\s+build/GOARCH\=arm64 go build/')
+          fi
+          echo "$COMMAND"
+          echo "$COMMAND" | bash

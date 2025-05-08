@@ -124,7 +124,7 @@ permissions:
 jobs:
   tests:
     name: Run Tests
-    runs-on: [self-hosted, '${{ inputs.environment }}']
+    runs-on: 'ubuntu-latest'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -164,7 +164,7 @@ jobs:
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: [self-hosted, '${{ inputs.environment }}']
+    runs-on: 'ubuntu-latest'
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}

@@ -47,19 +47,26 @@ on:
         required: true
       CI_DISTRIBUTION_ID:
         required: true
+
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Frontend - Build & Deploy"
-    runs-on: [self-hosted, "${{ inputs.environment }}"]
+    runs-on: [self-hosted, frontend, "${{ inputs.environment }}"]
     steps:
-      - uses: actions/checkout@v3.1.0
-      - name: "Set up Node ${{ inputs.node-version }}"
+      - name: Git Checkout
+        uses: actions/checkout@v3.1.0
+
+      - name: "Setup Node ${{ inputs.node-version }}"
         uses: actions/setup-node@v3.5.0
         with:
           node-version: ${{ inputs.node-version }}
 
-      - name: setup config.js with environment
+      - name: Setup config.js With Environment
         run: ./scripts/set_vars.sh
         shell: bash
         env:
@@ -68,30 +75,66 @@ jobs:
           AUTH0_NS: https://infralight.co
           AUTH0_AUDIENCE: infralight-api
           BACKEND_URL: ${{ secrets.CI_BACKEND_URL }}
-      - name: Frontend build (npm)
+          SSO_DOMAINS_OKTA: ${{ vars.SSO_DOMAINS_OKTA }}
+          SSO_DOMAINS_AZURE: ${{ vars.SSO_DOMAINS_AZURE }}
+          SSO_DOMAINS_PING: ${{ vars.SSO_DOMAINS_PING }}
+          SSO_DOMAINS_ONE: ${{ vars.SSO_DOMAINS_ONE }}
+
+      - name: Node Cache
+        uses: actions/cache@v4
+        id: npm-cache
+        with:
+          path: |
+            **/node_modules
+            **/.eslintcache
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Frontend Build (npm)
         env:
           CI: "false"
+          NODE_OPTIONS: "--max-old-space-size=9728"
         run: |
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
-          NODE_OPTIONS="--max-old-space-size=8192" npm run build
-      - name: Upload files
-        uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --acl public-read --follow-symlinks --delete --exclude='files/*'
+          npm run build
+
+      - name: Install AWS Cli
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o /tmp/awscliv2.zip
+          unzip -q /tmp/awscliv2.zip -d /tmp
+          rm /tmp/awscliv2.zip
+          sudo /tmp/aws/install --update
+          rm -rf /tmp/aws/
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         env:
-          SOURCE_DIR: 'build'
-          AWS_S3_BUCKET: ${{ secrets.CI_FRONTEND_BUCKET }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
+          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
+          role-session-name: runner
+          aws-region: ${{ secrets.CI_REGION }}
+
+      - name: Upload Files
+        env:
           AWS_REGION: ${{ secrets.CI_REGION }}
+          AWS_S3_BUCKET: ${{ secrets.CI_FRONTEND_BUCKET }}
+        run: |
+          aws s3 sync build s3://$AWS_S3_BUCKET \
+            --acl public-read \
+            --follow-symlinks \
+            --delete \
+            --exclude 'files/*' \
+            --region $AWS_REGION
+
       - name: Invalidate Cloudfront
-        uses: chetan/invalidate-cloudfront-action@master
+        uses: docker://public.ecr.aws/firefly/cloudfront-invalidation:v0.0.5
         env:
           PATHS: '/*'
-          AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
-          DISTRIBUTION: ${{ secrets.CI_DISTRIBUTION_ID }}
+          DISTRIBUTION_ID: ${{ secrets.CI_DISTRIBUTION_ID }}
+
       - name: Slack Notification
         if: ${{ success() }}
         uses: rtCamp/action-slack-notify@v2
