@@ -74,8 +74,9 @@ on:
         required: true
 
 permissions:
-  id-token: write
   contents: read
+  actions: write
+  id-token: write
 
 jobs:
   tests:

@@ -118,8 +118,9 @@ on:
         required: true
 
 permissions:
-  id-token: write
   contents: read
+  actions: write
+  id-token: write
 
 jobs:
   tests:
@@ -316,3 +317,4 @@ jobs:
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
+
