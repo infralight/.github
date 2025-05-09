@@ -98,7 +98,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
           command: app sync "${{ env.APP_NAME }}"
-          options: --retry-limit 30 --retry-backoff-duration 10s
+          options: --retry-limit 10 --retry-backoff-duration 20s --timeout 120
       - name: "[ArgoCD]: wait for deploy to complete"
         uses: clowdhaus/argo-cd-action/@v2.0.0
         env:
