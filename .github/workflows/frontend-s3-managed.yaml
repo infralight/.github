@@ -78,6 +78,7 @@ jobs:
           SSO_DOMAINS_OKTA: ${{ vars.SSO_DOMAINS_OKTA }}
           SSO_DOMAINS_AZURE: ${{ vars.SSO_DOMAINS_AZURE }}
           SSO_DOMAINS_PING: ${{ vars.SSO_DOMAINS_PING }}
+          SSO_DOMAINS_ONE: ${{ vars.SSO_DOMAINS_ONE }}
 
       - name: Node Cache
         uses: actions/cache@v4
@@ -109,7 +110,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         env:
-          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || 'stag' }}
+          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
         with:
           role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
           role-session-name: runner
