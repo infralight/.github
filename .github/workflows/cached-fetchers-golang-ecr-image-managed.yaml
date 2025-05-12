@@ -7,6 +7,10 @@ on:
         type: boolean
         required: false
         default: false
+      architecture:
+        type: string
+        required: false
+        default: 'arm64'
       go-version:
         default: '1.18.2'
         required: false
@@ -113,104 +117,142 @@ on:
       CI_ACCOUNT_ID:
         required: true
 
+permissions:
+  contents: read
+  actions: write
+  id-token: write
+
 jobs:
   tests:
     name: Run Tests
-    runs-on: 'ubuntu-24.04-arm'
+    runs-on: 'ubuntu-latest'
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Go Cache Preflights
+        id: cache
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
+        with:
+          app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
+          architecture: ${{ inputs.architecture }}
+          go-version: ${{ inputs.go-version }}
+          verb: 'tests'
+
+      - name: Go Cache Restore
+        id: go-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ steps.cache.outputs.go-build }}
+            ${{ steps.cache.outputs.go-mod }}
+          key: ${{ steps.cache.outputs.cache-key }}
+          restore-keys: |
+            ${{ steps.cache.outputs.cache-key-any }}
+            ${{ steps.cache.outputs.cache-key-any2 }}
+
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
-      - id: go-cache-paths
-        run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Go Build Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ steps.go-cache-paths.outputs.go-build }}
-            ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-test-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-test
-            ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-build
-            ${{ runner.os }}-full-test
-      - name: Configure git for private modules
+
+      - name: Configure Git for Private Modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+
   build-push-ecr:
-    needs: tests
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: 'ubuntu-24.04-arm'
+    runs-on: 'ubuntu-latest'
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
+      app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
     steps:
-      - uses: actions/checkout@v2
-      - name: "Set up Go"
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Configure Git for Private Modules
+        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+
+      - name: Go Cache Preflights
+        id: cache
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
+        with:
+          app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
+          architecture: ${{ inputs.architecture }}
+          go-version: ${{ inputs.go-version }}
+          verb: 'build'
+
+      - name: Go Cache Restore
+        id: go-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ steps.cache.outputs.go-build }}
+            ${{ steps.cache.outputs.go-mod }}
+          key: ${{ steps.cache.outputs.cache-key }}
+          restore-keys: |
+            ${{ steps.cache.outputs.cache-key-any }}
+            ${{ steps.cache.outputs.cache-key-any2 }}
+
+      - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
-      - id: go-cache-paths
+
+      - name: Go Cache Build
+        if: steps.go-cache-restore.outputs.cache-hit != 'true'
+        continue-on-error: true
         run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - name: Go Build Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ steps.go-cache-paths.outputs.go-build }}
-            ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-build-${{ hashFiles('./pkg/go.sum', './components/${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ inputs.cache-id != '' && inputs.cache-id || inputs.app-name }}-build
-      - name: "[Build] configure git for private modules"
-        if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
-        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
-      - name: Set output
+          gh workflow run firefly-cache-manager.yaml \
+          -f branch="$(git branch --show-current)" -f app-name="${{ steps.cache.outputs.target }}" -f go-version=${{ inputs.go-version }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Set Outputs
         id: vars
         run: |
-          echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-          echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - name: "configure aws credentials"
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
-          aws-region: ${{ secrets.CI_REGION }}
-      - name: "Pre-Run"
+          echo "tag=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Pre-Run
         if: ${{ inputs.pre-run != '' }}
         run: ${{ inputs.pre-run }}
-      - name: Build Go Binary
+
+      - name: Go Build
         if: ${{ !inputs.arm64 }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
           make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
-      - name: "Generate ECR Name"
+
+      - name: Generate ECR Name
         id: ecr-name
         run: |
           echo "ECR_NAME=${{ inputs.ecr-name != '' && inputs.ecr-name || inputs.app-name }}" >> $GITHUB_ENV
-      - name: Build Docker Image
+
+      - name: Docker Build Image
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
         run: |
           make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
+
       - name: Set up QEMU
         if: ${{ inputs.arm64 }}
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
-      - name: Build Go Binary [arm64]
+
+      - name: Go Build [arm64]
         if: ${{ inputs.arm64 }}
-        env: 
+        env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
         run: |
           COMMAND=$(make --dry-run ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE})
@@ -220,7 +262,8 @@ jobs:
           fi
           echo "$COMMAND"
           echo "$COMMAND" | bash
-      - name: Build Docker Image [arm64]
+
+      - name: Docker Build Image [arm64]
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
           COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.environment) || format('firefly-{0}-gitleaks-configuration/gitleaks.toml', inputs.cluster) }})
@@ -231,7 +274,8 @@ jobs:
 
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
-      - name: "Run Trivy vulnerability scanner"
+
+      - name: Run Trivy Vulnerability Scanner
         if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
         uses: aquasecurity/trivy-action@master
         with:
@@ -242,24 +286,35 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
-      - name: Upload Trivy scan results to S3
-        if: ${{ inputs.environment == 'dev' }}
-        uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --exclude '*' --include ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+        # env:
+        #   TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         env:
-          AWS_S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
-          AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_CRED_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
-          AWS_REGION: ${{ secrets.CI_REGION }}
-      - name: "login ecr"
-        uses: aws-actions/amazon-ecr-login@v1
-        id: login-ecr
-      - name: "upload image"
+          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
+          role-session-name: runner
+          aws-region: ${{ secrets.CI_REGION }}
+
+      - name: Upload Trivy Scan Results to S3
+        if: ${{ inputs.environment == 'dev' }}
+        env:
+          TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+          S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
+        run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
+
+      - name: AWS ECR Login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push Docker Image to ECR
         if: (env.HAVE_RUN_CMD == 'false')
         run: |
           docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
           if ${{inputs.latest}}; then docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest; fi
+
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
+
