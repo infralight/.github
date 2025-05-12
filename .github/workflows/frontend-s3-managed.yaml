@@ -71,6 +71,7 @@ jobs:
           SSO_DOMAINS_OKTA: ${{ vars.SSO_DOMAINS_OKTA }}
           SSO_DOMAINS_AZURE: ${{ vars.SSO_DOMAINS_AZURE }}
           SSO_DOMAINS_PING: ${{ vars.SSO_DOMAINS_PING }}
+          SSO_DOMAINS_ONE: ${{ vars.SSO_DOMAINS_ONE }}
       - name: Frontend build (npm)
         env:
           CI: "false"
