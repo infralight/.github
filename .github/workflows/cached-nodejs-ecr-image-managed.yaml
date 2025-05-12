@@ -1,0 +1,254 @@
+name: Reusable Node.js Build ECR Image
+
+on:
+  workflow_call:
+    inputs:
+      arm64:
+        type: boolean
+        required: false
+        default: false
+      architecture:
+        type: string
+        required: false
+        default: 'arm64'
+      go-version:
+        default: '1.18.2'
+        required: false
+        type: string
+      node-version:
+        default: '18'
+        required: false
+        type: string
+      react-version:
+        default: '18'
+        required: false
+        type: string
+      python-version:
+        default: '3.10'
+        required: false
+        type: string
+      react-app-api-url:
+        type: string
+        required: false
+        default: 'https://api.example.com'
+      react-app-google-client-id:
+        type: string
+        required: false
+        default: 'your-google-client-id'
+      custom:
+        type: boolean
+        required: false
+        default: false
+      run-tests:
+        type: boolean
+        required: false
+        default: false
+      test-name:
+        type: string
+        required: false
+        default: ''
+      ecr-prefix:
+        type: string
+        required: false
+        default: ''
+      trivy-scan:
+        type: boolean
+        required: false
+        default: true
+      gitleaks:
+        type: boolean
+        required: false
+        default: false
+      custom-tests:
+        type: boolean
+        required: false
+        default: false
+      cmd-tests:
+        type: string
+        required: false
+        default: "npm test"
+      app-name:
+        type: string
+        required: true
+      fetcher-name:
+        type: string
+        required: false
+        default: ''
+      ecr-name:
+        type: string
+        required: false
+        default: ''
+      branch:
+        type: string
+        required: true
+      event_name:
+        type: string
+        required: true
+      environment:
+        type: string
+        default: 'dev'
+        required: false
+      cluster:
+        type: string
+        default: 'env1'
+        required: false
+      latest:
+        type: boolean
+        required: false
+        default: false
+      self-hosted:
+        type: boolean
+        required: false
+        default: false
+      pre-run:
+        type: string
+        required: false
+        default: ""
+      run:
+        required: false
+        type: string
+      cache-id:
+        required: false
+        default: ""
+        type: string
+    secrets:
+      GLOBAL_PAT_USERNAME:
+        required: true
+      GLOBAL_PAT:
+        required: true
+      CI_AWS_CRED_KEY:
+        required: true
+      CI_AWS_CRED_SECRET:
+        required: true
+      CI_REGION:
+        required: true
+      CI_ACCOUNT_ID:
+        required: true
+
+env:
+  cache-runner-key: 'linux'
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: npm install
+      - name: Run Tests
+        run: npm test
+
+  build-push-ecr:
+    name: "Build & Push ECR Docker Images (Frontend & Backend)"
+    environment: ${{ inputs.environment }}
+    runs-on: 'ubuntu-latest'
+    env:
+      # Using the fetcher-name if provided, else the app-name
+      app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
+    steps:
+      - name: Checkout 
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+      - name: Configure Git for Private Modules
+        if: ${{ secrets.GLOBAL_PAT != '' }}
+        run: |
+          git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+      - name: Set Outputs
+        id: vars
+        run: |
+          echo "::set-output name=tag::${GITHUB_REF#refs/*/}"
+          echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
+          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          aws-region: ${{ secrets.CI_REGION }}
+      - name: Pre-Run
+        if: ${{ inputs.pre-run != '' }}
+        run: ${{ inputs.pre-run }}
+      - name: Docker Build (x86)
+        if: ${{ !inputs.arm64 }}
+        run: |
+          make docker-build \
+            FRONTEND_DOCKERFILE=Dockerfile.frontend \
+            BACKEND_DOCKERFILE=Dockerfile.backend \
+            FRONTEND_IMAGE=${{ inputs.ecr-prefix }}frontend \
+            BACKEND_IMAGE=${{ inputs.ecr-prefix }}backend \
+            REACT_APP_API_URL=${{ inputs.react-app-api-url }} \
+            REACT_APP_GOOGLE_CLIENT_ID=${{ inputs.react-app-google-client-id }} \
+            VERSION=${{ steps.vars.outputs.tag }}
+      - name: Tag Frontend Image
+        if: ${{ !inputs.arm64 }}
+        run: |
+          docker tag ${{ inputs.ecr-prefix }}frontend:${{ steps.vars.outputs.tag }} \
+            ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}frontend:latest
+          docker tag ${{ inputs.ecr-prefix }}frontend:${{ steps.vars.outputs.tag }} \
+            ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}frontend:${GITHUB_SHA::6}
+      - name: Tag Backend Image
+        if: ${{ !inputs.arm64 }}
+        run: |
+          docker tag ${{ inputs.ecr-prefix }}backend:${{ steps.vars.outputs.tag }} \
+            ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}backend:latest
+          docker tag ${{ inputs.ecr-prefix }}backend:${{ steps.vars.outputs.tag }} \
+            ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}backend:${GITHUB_SHA::6}
+      - name: Set up QEMU
+        if: ${{ inputs.arm64 }}
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "arm64"
+      - name: Docker Build (arm64)
+        if: ${{ inputs.arm64 }}
+        run: |
+          COMMAND=$(make --dry-run docker-build \
+            FRONTEND_DOCKERFILE=Dockerfile.frontend \
+            BACKEND_DOCKERFILE=Dockerfile.backend \
+            FRONTEND_IMAGE=${{ inputs.ecr-prefix }}frontend \
+            BACKEND_IMAGE=${{ inputs.ecr-prefix }}backend \
+            REACT_APP_API_URL=${{ inputs.react-app-api-url }} \
+            REACT_APP_GOOGLE_CLIENT_ID=${{ inputs.react-app-google-client-id }} \
+            VERSION=${{ steps.vars.outputs.tag }})
+          COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build/docker build --platform=linux\/arm64 /ig')
+          echo "$COMMAND"
+          echo "$COMMAND" | bash
+      - name: Tag Frontend Image [arm64]
+        if: ${{ inputs.arm64 }}
+        run: |
+          docker tag ${{ inputs.ecr-prefix }}frontend:${{ steps.vars.outputs.tag }} \
+            ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}frontend:latest
+          docker tag ${{ inputs.ecr-prefix }}frontend:${{ steps.vars.outputs.tag }} \
+            ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}frontend:${GITHUB_SHA::6}
+      - name: Tag Backend Image [arm64]
+        if: ${{ inputs.arm64 }}
+        run: |
+          docker tag ${{ inputs.ecr-prefix }}backend:${{ steps.vars.outputs.tag }} \
+            ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}backend:latest
+          docker tag ${{ inputs.ecr-prefix }}backend:${{ steps.vars.outputs.tag }} \
+            ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}backend:${GITHUB_SHA::6}
+      - name: Login ECR
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
+      - name: Docker Push Images (x86)
+        if: ${{ !inputs.arm64 }}
+        run: |
+          docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}frontend:${GITHUB_SHA::6}
+          docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}backend:${GITHUB_SHA::6}
+          if [ "${{ inputs.latest }}" = "true" ]; then
+            docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}frontend:latest
+            docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}backend:latest
+          fi
+      - name: Docker Push Images [arm64]
+        if: ${{ inputs.arm64 }}
+        run: |
+          docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}frontend:${GITHUB_SHA::6}
+          docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}backend:${GITHUB_SHA::6}
+          if [ "${{ inputs.latest }}" = "true" ]; then
+            docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}frontend:latest
+            docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}backend:latest
+          fi
+      - name: "[Build]: build image & upload to ECR - CUSTOM"
+        if: ${{ env.HAVE_RUN_CMD == 'true' }}
+        run: ${{ inputs.run }}
