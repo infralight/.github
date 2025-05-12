@@ -33,34 +33,20 @@ on:
         required: true
       CI_ACCOUNT_ID:
         required: true
-
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   lambda:
     environment: ${{ inputs.environment }}
     name: "[Lambda]"
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS Credentials
-        id: aws-creds
-        uses: aws-actions/configure-aws-credentials@v4
-        env:
-          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
-          role-session-name: runner
-          aws-region: ${{ secrets.CI_REGION }}
-
       - name: "[Lambda] Deploy"
         uses: appleboy/lambda-action@v0.1.9
         with:
+          aws_access_key_id: ${{ secrets.CI_AWS_CRED_KEY }}
+          aws_secret_access_key: ${{ secrets.CI_AWS_CRED_SECRET }}
           aws_region: ${{ secrets.CI_REGION }}
           function_name: ${{ inputs.lambda-name == '' && format('{0}-{1}', inputs.environment, inputs.app-name) || format('{0}-{1}', inputs.environment, inputs.lambda-name) }}
           image_uri: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest
-
       - name: "Notify Slack of deployment status"
         uses: rtCamp/action-slack-notify@v2
         env:
