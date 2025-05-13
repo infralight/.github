@@ -26,6 +26,10 @@ on:
         type: string
         default: '500'
         required: false
+      slack:
+        type: boolean
+        default: true
+        required: false
     secrets:
       CI_ACCOUNT_ID:
         required: false
@@ -47,7 +51,7 @@ jobs:
   argocd:
     environment: ${{ startsWith(inputs.cluster, 'env') && inputs.cluster || inputs.environment }}
     name: "Update image tag and sync changes on cluster."
-    runs-on: [self-hosted, "prod"]
+    runs-on: [ self-hosted, "prod" ]
     steps:
       - id: string
         uses: ASzc/change-string-case-action@v6
@@ -106,6 +110,7 @@ jobs:
         with:
           command: app wait ${{ env.APP_NAME }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
+        if: ${{ inputs.slack }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_ICON: https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png
