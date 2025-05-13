@@ -24,6 +24,10 @@ on:
         type: string
         default: '500'
         required: false
+      slack:
+        type: boolean
+        default: true
+        required: false
     secrets:
       CI_ARGOCD:
         required: true
@@ -82,6 +86,7 @@ jobs:
           command: app wait ${{ env.APP_NAME }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
         uses: rtCamp/action-slack-notify@v2
+        if: ${{ inputs.slack }}
         env:
           SLACK_ICON: https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png
           SLACK_COLOR: ${{ job.status }}
