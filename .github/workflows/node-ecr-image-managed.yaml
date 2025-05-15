@@ -106,7 +106,7 @@ jobs:
         id: build
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
         run: |
-          make docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
+          make docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} NPM_TOKEN=${{ secrets.GLOBAL_PAT }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
           echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
@@ -121,7 +121,7 @@ jobs:
         id: build-arm64
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
-          COMMAND=$(make --dry-run docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }})
+          COMMAND=$(make --dry-run docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}) NPM_TOKEN=${{ secrets.GLOBAL_PAT }}
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
           echo "$COMMAND" && echo "$COMMAND" | bash
