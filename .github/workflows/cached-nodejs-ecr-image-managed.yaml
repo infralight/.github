@@ -181,6 +181,7 @@ jobs:
             REACT_APP_API_URL=${{ inputs.react-app-api-url }} \
             REACT_APP_GOOGLE_CLIENT_ID=${{ inputs.react-app-google-client-id }} \
             VERSION=${{ steps.vars.outputs.tag }}
+            NPM_TOKEN=${{ secrets.GLOBAL_PAT }}
       - name: Tag Frontend Image
         if: ${{ !inputs.arm64 }}
         run: |
