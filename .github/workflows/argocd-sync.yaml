@@ -64,7 +64,7 @@ jobs:
       - name: "[ArgoCD]: set variables"
         id: vars
         run: |
-          echo "ARGO_APP_NAME=${{ inputs.argoAppName != '' && inputs.argoAppName || format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNameSuffix) }}" >> $GITHUB_ENV
+          echo "ARGO_APP_NAME=${{ inputs.argoAppName != '' && format('{0}-{1}-{2}', inputs.environment, inputs.cluster, inputs.argoAppName) || format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNameSuffix) }}" >> $GITHUB_ENV
           echo "APP_NAME=${{ format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNameSuffix) }}" >> $GITHUB_ENV
           echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD_TOKEN }}" >> $GITHUB_ENV
           echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
