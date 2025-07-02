@@ -118,8 +118,9 @@ on:
         required: true
 
 permissions:
-  id-token: write
   contents: read
+  actions: write
+  id-token: write
 
 jobs:
   tests:
@@ -131,7 +132,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@10xx
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
         with:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
           architecture: ${{ inputs.architecture }}
@@ -181,7 +182,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@10xx
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
         with:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
           architecture: ${{ inputs.architecture }}
@@ -219,6 +220,23 @@ jobs:
         run: |
           echo "tag=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
           echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Install AWS Cli
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o /tmp/awscliv2.zip
+          unzip -q /tmp/awscliv2.zip -d /tmp
+          rm /tmp/awscliv2.zip
+          sudo /tmp/aws/install --update
+          rm -rf /tmp/aws/
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        env:
+          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
+          role-session-name: runner
+          aws-region: ${{ secrets.CI_REGION }}
 
       - name: Pre-Run
         if: ${{ inputs.pre-run != '' }}
@@ -288,15 +306,6 @@ jobs:
         # env:
         #   TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        env:
-          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
-          role-session-name: runner
-          aws-region: ${{ secrets.CI_REGION }}
-
       - name: Upload Trivy Scan Results to S3
         if: ${{ inputs.environment == 'dev' }}
         env:
@@ -316,3 +325,4 @@ jobs:
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
+
