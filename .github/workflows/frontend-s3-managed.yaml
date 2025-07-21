@@ -26,6 +26,10 @@ on:
         type: string
         default: 'dev'
         required: false
+      slack:
+        type: boolean
+        default: true
+        required: false
     secrets:
       CI_AWS_CRED_KEY:
         required: true
@@ -137,7 +141,7 @@ jobs:
           DISTRIBUTION_ID: ${{ secrets.CI_DISTRIBUTION_ID }}
 
       - name: Slack Notification
-        if: ${{ success() }}
+        if: ${{ success() }} && ${{ inputs.slack }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
