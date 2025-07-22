@@ -47,7 +47,7 @@ jobs:
         id: aws-creds
         uses: aws-actions/configure-aws-credentials@v4
         env:
-          environment: ${{ inputs.environment == 'stag-eu' && 'stgeu' || (startsWith(inputs.environment, 'env') && 'dev' || inputs.environment) }}
+          environment: ${{ inputs.environment == 'stag' && 'stgeu' || (startsWith(inputs.environment, 'env') && 'dev' || inputs.environment) }}
         with:
           role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
           role-session-name: runner
