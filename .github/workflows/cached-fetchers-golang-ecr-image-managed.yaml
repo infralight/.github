@@ -169,7 +169,7 @@ jobs:
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
-      CLUSTER_NAME: ${{ inputs.environment == 'stag' && 'stageu' || inputs.environment == 'dev' && inputs.cluster || inputs.environment }}
+      CLUSTER_NAME: ${{ inputs.environment == 'stag' && 'stgeu' || inputs.environment == 'dev' && inputs.cluster || inputs.environment }}
       app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
     steps:
       - name: Checkout
