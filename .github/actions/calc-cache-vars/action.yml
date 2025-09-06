@@ -43,7 +43,6 @@ runs:
         IS_CACHE_MANAGER: ${{ inputs.is-cache-manager }}
     - name: dummy
       id: dummy
-      if: 1 == 2
       run: echo "dummy"
       shell: bash
 
