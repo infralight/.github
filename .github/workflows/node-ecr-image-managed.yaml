@@ -74,8 +74,8 @@ on:
         required: true
 
 permissions:
-  id-token: write
   contents: read
+  id-token: write
 
 jobs:
   tests:
@@ -102,19 +102,6 @@ jobs:
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20.x'
-
-      - name: Install Dependencies
-        run: yarn install --immutable
-
-      - name: Build Backend
-        run: |
-          yarn tsc:full
-          yarn build:all
-
       - name: Build Docker Image
         id: build
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
@@ -134,7 +121,7 @@ jobs:
         id: build-arm64
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
-          COMMAND=$(make --dry-run docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }})
+          COMMAND=$(make --dry-run docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} NPM_TOKEN=${{ secrets.GLOBAL_PAT }})
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
           echo "$COMMAND" && echo "$COMMAND" | bash
