@@ -3,6 +3,7 @@
 # Import extract_app_go_version function
 source $GITHUB_ACTION_PATH/helpers/golang-funcs.sh
 
+echo "test"
 
 echo "dummy=$GITHUB_ACTION_PATH/helpers/golang-funcs.sh" >> "$GITHUB_OUTPUT"
 
