@@ -21,7 +21,7 @@ if [ "$IS_CACHE_MANAGER" == "true" ]; then
     fi
 fi
 
-echo $(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)
+echo $(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build" || echo)
 
 # Override GO_VERSION from go.mod
 GO_VERSION=$(extract_app_go_version $(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo) || echo $GO_VERSION)
