@@ -3,10 +3,6 @@
 # Import extract_app_go_version function
 source $GITHUB_ACTION_PATH/helpers/golang-funcs.sh
 
-
-
-head "$GITHUB_ACTION_PATH/helpers/golang-funcs.sh"
-
 # Export Target Cache Type (e.g. "app-name" or "MONO_REPO")
 target=$(find . -name go.mod | wc -l | awk -v app="$APP_NAME" '{print ($1>1)?app:"MONO_REPO"}')
 echo "target=$([ "$target" = "MONO_REPO" ] && echo "*" || echo "$target")" >> "$GITHUB_OUTPUT"
@@ -24,6 +20,8 @@ if [ "$IS_CACHE_MANAGER" == "true" ]; then
         GO_VERSION=$((grep '^toolchain ' go.mod || grep '^go ' go.mod) | awk '{print $2}' | sed 's/go//')
     fi
 fi
+
+echo $(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)
 
 # Override GO_VERSION from go.mod
 GO_VERSION=$(extract_app_go_version $(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo) || echo $GO_VERSION)
