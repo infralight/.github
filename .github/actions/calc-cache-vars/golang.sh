@@ -5,7 +5,7 @@ source $GITHUB_ACTION_PATH/helpers/golang-funcs.sh
 
 
 
-echo "$GITHUB_ACTION_PATH/helpers/golang-funcs.sh"
+head "$GITHUB_ACTION_PATH/helpers/golang-funcs.sh"
 
 # Export Target Cache Type (e.g. "app-name" or "MONO_REPO")
 target=$(find . -name go.mod | wc -l | awk -v app="$APP_NAME" '{print ($1>1)?app:"MONO_REPO"}')
