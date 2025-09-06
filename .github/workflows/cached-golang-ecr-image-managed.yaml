@@ -188,6 +188,8 @@ jobs:
           go-version: ${{ inputs.go-version }}
           verb: 'build'
 
+      - run: echo "dummy=${{ steps.cache.outputs.dummy }}"
+
       - name: Go Cache Restore
         id: go-cache-restore
         uses: actions/cache/restore@v4
