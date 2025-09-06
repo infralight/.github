@@ -131,7 +131,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@cache-v2
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
         with:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
           architecture: ${{ inputs.architecture }}
@@ -152,7 +152,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: ${{ steps.cache.outputs.go-version }}
+          go-version: ${{ inputs.go-version }}
 
       - name: Configure Git for Private Modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
@@ -181,7 +181,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@cache-v2
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
         with:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
           architecture: ${{ inputs.architecture }}
@@ -203,7 +203,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ steps.cache.outputs.go-version }}
+          go-version: ${{ inputs.go-version }}
 
       - name: Go Cache Build
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
