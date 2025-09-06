@@ -1,4 +1,4 @@
-name: Reusable Golang Cache Manager 
+name: Reusable Golang Cache Manager
 
 on:
   workflow_call:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@10xx
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
         with:
           app-name: ${{ inputs.app-name }}
           architecture: arm64
@@ -67,8 +67,8 @@ jobs:
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
-        
-      - name: Go Run Tests 
+
+      - name: Go Run Tests
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         run: |
           if [ "${{ inputs.app-name }}" != "*" ]; then
@@ -92,7 +92,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@10xx
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
         with:
           app-name: ${{ inputs.app-name }}
           architecture: arm64
@@ -164,7 +164,7 @@ jobs:
           du -sh ${{ steps.cache.outputs.go-build }}
           du -sh ${{ steps.cache.outputs.go-mod }}
 
-      - name: Go Build (APP_NAME) 
+      - name: Go Build (APP_NAME)
         if: inputs.app-name != '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"

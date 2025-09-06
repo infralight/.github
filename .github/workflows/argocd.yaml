@@ -24,12 +24,18 @@ on:
         type: string
         default: '500'
         required: false
+      slack:
+        type: boolean
+        default: true
+        required: false
     secrets:
       CI_ARGOCD:
         required: true
       CI_SLACK_WEBHOOK:
         required: true
       CI_ARGOCD_SERVER:
+        required: true
+      CI_GITHUB_TOKEN:
         required: true
 jobs:
   argocd:
@@ -45,6 +51,7 @@ jobs:
           echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
           echo "TAG=${GITHUB_SHA::6}" >> $GITHUB_ENV
+          echo "GITHUB_TOKEN=${{ secrets.CI_GITHUB_TOKEN }}" >> $GITHUB_ENV
           echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
           if [[ "${{ inputs.environment }}" == "dev" ]]; then
             echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
@@ -67,14 +74,19 @@ jobs:
           options: --hard-refresh
       - name: "[ArgoCD]: trigger sync"
         uses: clowdhaus/argo-cd-action/@v2.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
           command: app sync "${{ env.APP_NAME }}"
       - name: "[ArgoCD]: wait for deploy to complete"
         uses: clowdhaus/argo-cd-action/@v2.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
           command: app wait ${{ env.APP_NAME }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
         uses: rtCamp/action-slack-notify@v2
+        if: ${{ inputs.slack }}
         env:
           SLACK_ICON: https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png
           SLACK_COLOR: ${{ job.status }}

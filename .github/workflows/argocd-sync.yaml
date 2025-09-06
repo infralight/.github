@@ -13,6 +13,10 @@ on:
         type: string
         default: ''
         required: false
+      argoAppName:
+        type: string
+        default: ''
+        required: false
       branch:
         type: string
         required: true
@@ -25,6 +29,10 @@ on:
       timeout:
         type: string
         default: '500'
+        required: false
+      slack:
+        type: boolean
+        default: true
         required: false
     secrets:
       CI_ACCOUNT_ID:
@@ -41,6 +49,8 @@ on:
         required: true
       CI_PAT:
         required: true
+      CI_GITHUB_TOKEN:
+        required: true
 jobs:
   argocd:
     environment: ${{ startsWith(inputs.cluster, 'env') && inputs.cluster || inputs.environment }}
@@ -54,12 +64,14 @@ jobs:
       - name: "[ArgoCD]: set variables"
         id: vars
         run: |
+          echo "ARGO_APP_NAME=${{ inputs.argoAppName != '' && format('{0}-{1}-{2}', inputs.environment, inputs.cluster, inputs.argoAppName) || format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNameSuffix) }}" >> $GITHUB_ENV
           echo "APP_NAME=${{ format('{0}-{1}-{2}{3}', inputs.environment, inputs.cluster, inputs.appName, inputs.appNameSuffix) }}" >> $GITHUB_ENV
           echo "ARGOCD_AUTH_TOKEN=${{ secrets.CI_ARGOCD_TOKEN }}" >> $GITHUB_ENV
           echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
           echo "FETCHER_NAME=${{ steps.string.outputs.uppercase }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
           echo "TAG=${GITHUB_SHA::6}" >> $GITHUB_ENV
+          echo "GITHUB_TOKEN=${{ secrets.CI_GITHUB_TOKEN }}" >> $GITHUB_ENV
           echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
           if [[ "${{ inputs.environment }}" == "dev" ]]; then
             echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
@@ -90,15 +102,20 @@ jobs:
           pull: '--rebase --autostash'
           push: 'origin --force'
       - name: "[ArgoCD]: trigger sync"
-        uses: clowdhaus/argo-cd-action/@v2.0.0
+        uses: clowdhaus/argo-cd-action/@v2.3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
-          command: app sync "${{ env.APP_NAME }}"
-          options: --retry-limit 30 --retry-backoff-duration 10s
+          command: app sync "${{ env.ARGO_APP_NAME }}"
+          options: --retry-limit 3 --retry-backoff-duration 20s
       - name: "[ArgoCD]: wait for deploy to complete"
-        uses: clowdhaus/argo-cd-action/@v2.0.0
+        uses: clowdhaus/argo-cd-action/@v2.3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
-          command: app wait ${{ env.APP_NAME }} --timeout ${{ inputs.timeout }}
+          command: app wait ${{ env.ARGO_APP_NAME }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
+        if: ${{ inputs.slack }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_ICON: https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png

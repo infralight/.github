@@ -26,6 +26,10 @@ on:
         type: string
         default: 'dev'
         required: false
+      slack:
+        type: boolean
+        default: true
+        required: false
     secrets:
       CI_AWS_CRED_KEY:
         required: true
@@ -75,6 +79,7 @@ jobs:
           AUTH0_NS: https://infralight.co
           AUTH0_AUDIENCE: infralight-api
           BACKEND_URL: ${{ secrets.CI_BACKEND_URL }}
+          NEXUS_API_URL: ${{ vars.CI_NEXUS_API_URL }}
           SSO_DOMAINS_OKTA: ${{ vars.SSO_DOMAINS_OKTA }}
           SSO_DOMAINS_AZURE: ${{ vars.SSO_DOMAINS_AZURE }}
           SSO_DOMAINS_PING: ${{ vars.SSO_DOMAINS_PING }}
@@ -101,7 +106,7 @@ jobs:
 
       - name: Install AWS Cli
         run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o /tmp/awscliv2.zip
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
           unzip -q /tmp/awscliv2.zip -d /tmp
           rm /tmp/awscliv2.zip
           sudo /tmp/aws/install --update
@@ -136,7 +141,7 @@ jobs:
           DISTRIBUTION_ID: ${{ secrets.CI_DISTRIBUTION_ID }}
 
       - name: Slack Notification
-        if: ${{ success() }}
+        if: ${{ success() }} && ${{ inputs.slack }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
