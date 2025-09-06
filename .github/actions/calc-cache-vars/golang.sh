@@ -3,9 +3,9 @@
 # Import extract_app_go_version function
 source $GITHUB_ACTION_PATH/helpers/golang-funcs.sh
 
-echo "test"
 
-echo "dummy=$GITHUB_ACTION_PATH/helpers/golang-funcs.sh" >> "$GITHUB_OUTPUT"
+
+echo "$GITHUB_ACTION_PATH/helpers/golang-funcs.sh"
 
 # Export Target Cache Type (e.g. "app-name" or "MONO_REPO")
 target=$(find . -name go.mod | wc -l | awk -v app="$APP_NAME" '{print ($1>1)?app:"MONO_REPO"}')
