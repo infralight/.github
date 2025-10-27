@@ -12,7 +12,7 @@ extract_app_go_version() {
   fi
 
   # Normalize path
-  src_dir=$(cd "$src_dir" && pwd)
+  src_dir="$(cd "$src_dir" 2>/dev/null && pwd -P || echo "$src_dir")"
 
   # Find nearest go.mod upwards
   mod_dir=$(cd "$src_dir" && \
