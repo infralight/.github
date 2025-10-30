@@ -41,12 +41,6 @@ runs:
         VERB: ${{ inputs.verb }}
         MONO_GO_SUM_HASH: ${{ hashFiles('**/go.sum') }}
         IS_CACHE_MANAGER: ${{ inputs.is-cache-manager }}
-    - name: dummy
-      id: dummy
-      if: 1 == 2
-      run: echo "dummy"
-      shell: bash
-
 
 outputs:
   go-build:

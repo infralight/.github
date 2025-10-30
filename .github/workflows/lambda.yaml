@@ -22,6 +22,10 @@ on:
         type: string
         default: 'dev'
         required: false
+      slack:
+        type: boolean
+        required: false
+        default: true
     secrets:
       CI_SLACK_WEBHOOK:
         required: true
@@ -36,7 +40,6 @@ on:
 permissions:
   id-token: write
   contents: read
-
 jobs:
   lambda:
     environment: ${{ inputs.environment }}
@@ -52,17 +55,16 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
           role-session-name: runner
           aws-region: ${{ secrets.CI_REGION }}
-
       - name: "[Lambda] Deploy"
         uses: appleboy/lambda-action@v0.1.9
         with:
           # aws_access_key_id: ${{ secrets.CI_AWS_CRED_KEY }}
           # aws_secret_access_key: ${{ secrets.CI_AWS_CRED_SECRET }}
           aws_region: ${{ secrets.CI_REGION }}
-          function_name: ${{ inputs.lambda-name == '' && format('{0}-{1}', inputs.environment, inputs.app-name) || format('{0}-{1}', inputs.environment, inputs.lambda-name) }}
+          function_name: ${{ inputs.lambda-name == '' && format('{0}-{1}', inputs.environment == 'stag' && 'stgeu' || inputs.environment, inputs.app-name) || format('{0}-{1}', inputs.environment == 'stag' && 'stgeu' || inputs.environment, inputs.lambda-name) }}
           image_uri: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest
-
       - name: "Notify Slack of deployment status"
+        if: ${{ inputs.slack }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_ICON: https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png
