@@ -22,8 +22,7 @@ if [ "$IS_CACHE_MANAGER" == "true" ]; then
 fi
 
 # Override GO_VERSION from go.mod
-app_make_command=$(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build" | sed 's/[()]//g' | tail -n 1 || echo)
-go_version_extracted=$(extract_app_go_version "$app_make_command" 2>/dev/null)
+go_version_extracted=$(extract_app_go_version "$APP_NAME" 2>/dev/null)
 if [ -z "$go_version_extracted" ]; then
     echo "Warning: extract_app_go_version failed to extract Go version. Falling back to GO_VERSION: $GO_VERSION" >&2
 else
@@ -45,10 +44,9 @@ if [ "$target" == "MONO_REPO" ]; then
     echo "cache-key=$key_prefix-checksum-$checksum" >> "$GITHUB_OUTPUT"
     echo "cache-key-any=$key_prefix-checksum-" >> "$GITHUB_OUTPUT"
 else
-    app_dir="$(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build"  | grep -oE '[^ ]+\.go' || echo)"
-    app_dir="$(dirname $app_dir 2>/dev/null || echo)"
-    go_sum_path="$([ -z "$app_dir" ] && ls **/go.sum | head -n 1 || echo "$app_dir/go.sum")"
-    checksum=$(sha256sum $go_sum_path | awk '{print $1}' | cut -c 1-6)
+    go_mod_dir=$(find_nearest_go_mod_dir "$APP_NAME" 2>/dev/null)
+    go_sum_path=$([ -f "$go_mod_dir/go.sum" ] && echo "$go_mod_dir/go.sum" || echo "$go_mod_dir/go.mod")
+    checksum=$(sha256sum "$go_sum_path" | awk '{print $1}' | cut -c 1-6)
     echo "cache-key=$key_prefix-$APP_NAME-checksum-$checksum" >> "$GITHUB_OUTPUT"
     echo "cache-key-any=$key_prefix-$APP_NAME-checksum-" >> "$GITHUB_OUTPUT"
     echo "cache-key-any2=$key_prefix-" >> "$GITHUB_OUTPUT"
