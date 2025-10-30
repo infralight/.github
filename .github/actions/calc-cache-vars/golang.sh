@@ -23,7 +23,12 @@ fi
 
 # Override GO_VERSION from go.mod
 app_make_command=$(make --dry-run ci-build-$APP_NAME 2>/dev/null | grep "go build" | sed 's/[()]//g' | tail -n 1 || echo)
-GO_VERSION=$(extract_app_go_version "$app_make_command" || echo $GO_VERSION)
+go_version_extracted=$(extract_app_go_version "$app_make_command" 2>/dev/null)
+if [ -z "$go_version_extracted" ]; then
+    echo "Warning: extract_app_go_version failed to extract Go version. Falling back to GO_VERSION: $GO_VERSION" >&2
+else
+    GO_VERSION="$go_version_extracted"
+fi
 echo $GO_VERSION
 
 # Trim Patch Version (e.g. 1.23.0 -> 1.23)
