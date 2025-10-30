@@ -2,6 +2,8 @@ extract_app_go_version() {
   local cmd="$1"
   local src src_dir mod_dir go_version
 
+  echo "Command => $cmd"
+
   # Extract the last argument (could be .go file or dir)
   src=$(echo "$cmd" | awk '{print $NF}')
 
@@ -13,6 +15,8 @@ extract_app_go_version() {
 
   # Normalize path
   src_dir="$(cd "$src_dir" 2>/dev/null && pwd -P || echo "$src_dir")"
+
+  echo "Source Directory => $src_dir"
 
   # Find nearest go.mod upwards
   mod_dir=$(cd "$src_dir" && \
