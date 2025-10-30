@@ -24,7 +24,7 @@ fi
 # Override GO_VERSION from go.mod
 go_version_extracted=$(extract_app_go_version "$APP_NAME" 2>/dev/null)
 if [ -z "$go_version_extracted" ]; then
-    echo "Warning: extract_app_go_version failed to extract Go version. Falling back to GO_VERSION: $GO_VERSION" >&2
+    echo "Warning: failed to extract Go version. Falling back to GO_VERSION: $GO_VERSION" >&2
 else
     GO_VERSION="$go_version_extracted"
 fi
