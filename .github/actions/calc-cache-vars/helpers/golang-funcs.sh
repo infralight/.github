@@ -28,6 +28,8 @@ extract_app_go_version() {
       cd ..
     done)
 
+  echo "Go Module Directory => $mod_dir"
+
   if [[ -z "$mod_dir" ]]; then
     return 1
   fi
