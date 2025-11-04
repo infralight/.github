@@ -286,9 +286,6 @@ jobs:
           echo "$COMMAND"
           echo "$COMMAND" | bash
 
-          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
-          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
-
       - name: Run Trivy Vulnerability Scanner
         if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
         uses: aquasecurity/trivy-action@master
@@ -318,9 +315,16 @@ jobs:
         env:
           ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-prod-registry != '') && inputs.ecr-prod-registry || env.PRIVATE_ECR_REGISTRY }}
         run: |
-          echo $ECR_REGISTRY/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
-          docker push ${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
-          if ${{inputs.latest}}; then docker push ${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest; fi
+          IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}
+          echo ${IMAGE_URI}
+
+          docker tag docker.io/library/tempimage ${IMAGE_URI}:${GITHUB_SHA::6}
+          docker push ${IMAGE_URI}:${GITHUB_SHA::6}
+
+          if ${{inputs.latest}}; then
+            docker tag docker.io/library/tempimage ${IMAGE_URI}:latest
+            docker push ${IMAGE_URI}:latest
+          fi
 
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
