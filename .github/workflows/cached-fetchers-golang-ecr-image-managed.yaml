@@ -47,7 +47,7 @@ on:
         type: string
         required: false
         default: ''
-      ecr-prod-registry:
+      ecr-public-registry:
         type: string
         required: false
         default: ''
@@ -308,11 +308,11 @@ jobs:
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
       - name: AWS ECR Login
-        if: inputs.ecr-prod-registry == '' || inputs.environment != 'prod'
+        if: inputs.ecr-public-registry == '' || inputs.environment != 'prod'
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: AWS ECR Public Login
-        if: inputs.ecr-prod-registry != '' && inputs.environment == 'prod'
+        if: inputs.ecr-public-registry != '' && inputs.environment == 'prod'
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
@@ -320,7 +320,7 @@ jobs:
       - name: Push Docker Image to ECR
         if: (env.HAVE_RUN_CMD == 'false')
         env:
-          ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-prod-registry != '') && inputs.ecr-prod-registry || env.PRIVATE_ECR_REGISTRY }}
+          ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-public-registry != '') && inputs.ecr-public-registry || env.PRIVATE_ECR_REGISTRY }}
         run: |
           IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}
 
