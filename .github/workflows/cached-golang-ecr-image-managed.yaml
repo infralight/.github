@@ -311,7 +311,7 @@ jobs:
         if: inputs.ecr-prod-registry == '' || inputs.environment != 'prod'
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: ECR Public Login
+      - name: AWS ECR Public Login
         if: inputs.ecr-prod-registry != '' && inputs.environment == 'prod'
         uses: aws-actions/amazon-ecr-login@v2
         with:
@@ -323,7 +323,6 @@ jobs:
           ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-prod-registry != '') && inputs.ecr-prod-registry || env.PRIVATE_ECR_REGISTRY }}
         run: |
           IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}
-          echo ${IMAGE_URI}
 
           docker tag docker.io/library/tempimage ${IMAGE_URI}:${GITHUB_SHA::6}
           docker push ${IMAGE_URI}:${GITHUB_SHA::6}
