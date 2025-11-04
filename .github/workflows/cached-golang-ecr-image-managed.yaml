@@ -308,7 +308,14 @@ jobs:
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
       - name: AWS ECR Login
+        if: inputs.ecr-prod-registry == '' || inputs.environment != 'prod'
         uses: aws-actions/amazon-ecr-login@v2
+
+      - name: ECR Public Login
+        if: inputs.ecr-prod-registry != '' && inputs.environment == 'prod'
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
 
       - name: Push Docker Image to ECR
         if: (env.HAVE_RUN_CMD == 'false')
