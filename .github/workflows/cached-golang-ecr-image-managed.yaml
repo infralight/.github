@@ -43,6 +43,14 @@ on:
         type: string
         required: false
         default: ''
+      ecr-name:
+        type: string
+        required: false
+        default: ''
+      ecr-prod-registry:
+        type: string
+        required: false
+        default: ''
       trivy-scan:
         type: boolean
         required: false
@@ -63,10 +71,6 @@ on:
         type: string
         required: true
       fetcher-name:
-        type: string
-        required: false
-        default: ''
-      ecr-name:
         type: string
         required: false
         default: ''
@@ -169,6 +173,7 @@ jobs:
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
+      PRIVATE_ECR_REGISTRY: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com
       app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
     steps:
       - name: Checkout
@@ -310,9 +315,12 @@ jobs:
 
       - name: Push Docker Image to ECR
         if: (env.HAVE_RUN_CMD == 'false')
+        env:
+          ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-prod-registry != '') && inputs.ecr-prod-registry || env.PRIVATE_ECR_REGISTRY }}
         run: |
-          docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
-          if ${{inputs.latest}}; then docker push ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest; fi
+          echo $ECR_REGISTRY/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
+          docker push ${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
+          if ${{inputs.latest}}; then docker push ${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest; fi
 
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
