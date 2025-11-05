@@ -17,7 +17,7 @@ on:
         type: string
         default: ''
         required: false
-      argoImageTagPath:
+      imageTagPath:
           type: string
           default: '.tag'
           required: false
@@ -98,7 +98,7 @@ jobs:
         if: ${{ inputs.fetcherName != 'iacathon-crawler' }}
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '${{ inputs.fetcherName != '' && format('.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || inputs.argoImageTagPath }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+          cmd: yq -i '${{ inputs.fetcherName != '' && format('.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || inputs.imageTagPath }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: 'tmp/helm-values'
