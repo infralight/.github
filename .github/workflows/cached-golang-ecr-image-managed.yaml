@@ -157,7 +157,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: ${{ inputs.go-version }}
+          go-version: ${{ steps.cache.outputs.go-version }}
 
       - name: Configure Git for Private Modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
@@ -210,7 +210,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ inputs.go-version }}
+          go-version: ${{ steps.cache.outputs.go-version }}
 
       - name: Go Cache Build
         if: steps.go-cache-restore.outputs.cache-hit != 'true'
