@@ -1,0 +1,32 @@
+name: golang-linter
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  golang-linter:
+    name: linter
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - name: Configure git for private modules
+        run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
+        
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1
+          args: --timeout=20m -- $(find . -type f -name "go.work" | grep . > /dev/null && go work edit -json | jq -c -r '[.Use[].DiskPath] | map_values(. + "/...")[]' || echo)
+          only-new-issues: true
+          skip-save-cache: true
+          skip-cache: true
