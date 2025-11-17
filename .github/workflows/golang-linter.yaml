@@ -1,8 +1,7 @@
 name: golang-linter
+
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_call:
 
 permissions:
   contents: read
@@ -21,7 +20,7 @@ jobs:
 
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
-        
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
