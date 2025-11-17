@@ -31,4 +31,4 @@ jobs:
           args: --timeout=20m -- $(find . -type f -name "go.work" | grep . > /dev/null && go work edit -json | jq -c -r '[.Use[].DiskPath] | map_values(. + "/...")[]' || echo)
           only-new-issues: true
           skip-save-cache: true
-          skip-cache: true
+          # skip-cache: true
