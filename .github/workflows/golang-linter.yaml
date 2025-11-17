@@ -2,6 +2,9 @@ name: golang-linter
 
 on:
   workflow_call:
+    secrets:
+      GLOBAL_PAT:
+        required: true
 
 permissions:
   contents: read
