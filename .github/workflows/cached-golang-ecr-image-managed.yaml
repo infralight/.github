@@ -287,14 +287,6 @@ jobs:
           echo "$COMMAND"
           echo "$COMMAND" | bash
 
-      - name: Clean up Docker dangling images before Trivy
-        if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
-        run: |
-          # Remove only dangling/untagged images and build cache, keep our tagged images
-          docker image prune -f
-          docker builder prune -f
-          df -h
-          
       - name: Run Trivy Vulnerability Scanner
         if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
         uses: aquasecurity/trivy-action@master
