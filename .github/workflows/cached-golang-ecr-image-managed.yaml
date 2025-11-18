@@ -287,6 +287,12 @@ jobs:
           echo "$COMMAND"
           echo "$COMMAND" | bash
 
+      - name: Clean up Docker to free space
+        if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
+        run: |
+          docker system prune -af --volumes
+          df -h
+          
       - name: Run Trivy Vulnerability Scanner
         if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
         uses: aquasecurity/trivy-action@master
