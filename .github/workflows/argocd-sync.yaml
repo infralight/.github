@@ -59,7 +59,7 @@ jobs:
   argocd:
     environment: ${{ startsWith(inputs.cluster, 'env') && inputs.cluster || inputs.environment }}
     name: "Update image tag and sync changes on cluster."
-    runs-on: [self-hosted, "prod"]
+    runs-on: [self-hosted, "prod", "arm64"]
     steps:
       - id: string
         uses: ASzc/change-string-case-action@v6
