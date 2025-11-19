@@ -125,7 +125,7 @@ permissions:
 jobs:
   tests:
     name: Run Tests
-    runs-on: 'ubuntu-24.04'
+    runs-on: [self-hosted, arm64, '${{ inputs.environment }}']
     steps:
       - name: Checkout
         uses: actions/checkout@v4
