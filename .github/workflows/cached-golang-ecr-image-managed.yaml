@@ -236,6 +236,13 @@ jobs:
           role-session-name: runner
           aws-region: ${{ secrets.CI_REGION }}
 
+      - name: Debug AWS Identity
+        run: |
+          echo "Current AWS Identity:"
+          aws sts get-caller-identity
+          echo "Testing ECR permissions:"
+          aws ecr describe-repositories --max-items 1 || echo "ECR describe failed"
+
       - name: Pre-Run
         if: ${{ inputs.pre-run != '' }}
         run: ${{ inputs.pre-run }}
