@@ -130,10 +130,6 @@ jobs:
   tests:
     name: Run Tests
     runs-on: [self-hosted, arm64 ,'${{ inputs.environment }}']
-    services:
-      docker:
-       image: docker:dind
-       options: --privileged
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -169,7 +165,10 @@ jobs:
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-
+          DOCKER_HOST: tcp://docker:2375
+          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
