@@ -130,6 +130,10 @@ jobs:
   tests:
     name: Run Tests
     runs-on: [self-hosted, arm64 ,'${{ inputs.environment }}']
+    services:
+      docker:
+       image: docker:dind
+       options: --privileged
     steps:
       - name: Checkout
         uses: actions/checkout@v4
