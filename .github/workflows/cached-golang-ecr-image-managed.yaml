@@ -265,7 +265,7 @@ jobs:
         with:
           platforms: "arm64"
 
-      - name: Go Build [arm64]
+      - name: Go Build (ARM64)
         if: ${{ inputs.arm64 }}
         env:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
@@ -278,7 +278,7 @@ jobs:
           echo "$COMMAND"
           echo "$COMMAND" | bash
 
-      - name: Docker Build Image [arm64]
+      - name: Docker Build Image (ARM64)
         if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
         run: |
           COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ format('firefly-{0}-gitleaks-configuration/gitleaks.toml', env.CLUSTER_NAME) }} )
