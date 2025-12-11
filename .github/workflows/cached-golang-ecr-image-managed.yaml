@@ -345,11 +345,11 @@ jobs:
             docker push ${IMAGE_URI}:latest
           fi
 
-      - name: Setup Docker Buildx (Multi-Arch)
-        if: env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false'
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
+      # - name: Setup Docker Buildx (Multi-Arch)
+      #   if: env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false'
+      #   uses: docker/setup-buildx-action@v3
+      #   with:
+      #     driver: docker-container
 
       - name: Docker Push to ECR (Multi-Arch)
         if: env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false'
@@ -357,7 +357,7 @@ jobs:
           ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-public-registry != '') && inputs.ecr-public-registry || env.PRIVATE_ECR_REGISTRY }}
         run: |
           IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}
-          #docker buildx create --use --name multiarchbuilder
+          docker buildx create --use --name multiarchbuilder
           docker buildx build --push --platform linux/amd64,linux/arm64 \
             -t ${IMAGE_URI}:${GITHUB_SHA::6} \
             -t ${IMAGE_URI}:latest \
