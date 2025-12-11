@@ -345,12 +345,6 @@ jobs:
             docker push ${IMAGE_URI}:latest
           fi
 
-      # - name: Setup Docker Buildx (Multi-Arch)
-      #   if: env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false'
-      #   uses: docker/setup-buildx-action@v3
-      #   with:
-      #     driver: docker-container
-
       - name: Docker Push to ECR (Multi-Arch)
         if: env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false'
         env:
