@@ -351,7 +351,7 @@ jobs:
           docker buildx build --push --platform linux/amd64,linux/arm64 \
             -t ${IMAGE_URI}:${GITHUB_SHA::6} \
             -t ${IMAGE_URI}:latest \
-            .
+            -f cmd/aws-cost-exporter/Dockerfile .
 
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
