@@ -350,10 +350,13 @@ jobs:
         env:
           ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-public-registry != '') && inputs.ecr-public-registry || env.PRIVATE_ECR_REGISTRY }}
         run: |
-          export IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}
-          export IMAGE_TAG=${GITHUB_SHA::6}
+          IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}
+          make ci-export-vars-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
           docker buildx create --use --name multiarchbuilder
-          make ci-docker-build-multi-arch-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} GITLEAKS_FILE_PATH=s3://${{ format('firefly-{0}-gitleaks-configuration/gitleaks.toml', env.CLUSTER_NAME) }}
+          docker buildx build --push --platform linux/amd64,linux/arm64 \
+            -t ${IMAGE_URI}:${GITHUB_SHA::6} \
+            -t ${IMAGE_URI}:latest \
+            -f ${DOCKERFILE} .
 
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
