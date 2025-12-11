@@ -320,6 +320,16 @@ jobs:
           S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
+      - name: AWS ECR Login
+        if: inputs.ecr-public-registry == '' || inputs.environment != 'prod'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: AWS ECR Login (Public)
+        if: inputs.ecr-public-registry != '' && inputs.environment == 'prod'
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
       - name: Docker Push to ECR
         if: (env.IS_MULTI_ARCH_PROD == 'false' && env.HAVE_RUN_CMD == 'false')
         env:
