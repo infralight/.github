@@ -51,6 +51,8 @@ on:
         required: true
       CI_DISTRIBUTION_ID:
         required: true
+      CI_AZURE_DEVOPS_CLIENT_ID:
+        required: true
 
 permissions:
   id-token: write
