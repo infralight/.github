@@ -129,11 +129,19 @@ jobs:
           AWS_REGION: ${{ secrets.CI_REGION }}
           AWS_S3_BUCKET: ${{ secrets.CI_FRONTEND_BUCKET }}
         run: |
-          aws s3 sync build s3://$AWS_S3_BUCKET \
+          #  Upload all files except index.html
+          aws s3 sync build s3://$FRONTEND_BUCKET \
             --acl public-read \
             --follow-symlinks \
             --delete \
             --exclude 'files/*' \
+            --exclude 'index.html' \
+            --region $AWS_REGION
+
+          # Upload index.html with no-cache
+          aws s3 cp build/index.html s3://$FRONTEND_BUCKET/index.html \
+            --acl public-read \
+            --cache-control "no-cache, no-store, must-revalidate" \
             --region $AWS_REGION
 
       - name: Invalidate Cloudfront
