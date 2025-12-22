@@ -135,7 +135,7 @@ jobs:
             --follow-symlinks \
             --delete \
             --exclude 'files/*' \
-            --exclude 'index.html' \
+            --exclude 'public/index.html' \
             --region $AWS_REGION
 
           # Upload index.html with no-cache
