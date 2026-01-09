@@ -7,6 +7,10 @@ on:
         type: boolean
         required: false
         default: false
+      multi-arch:
+        type: boolean
+        required: false
+        default: false
       architecture:
         type: string
         required: false
@@ -176,6 +180,7 @@ jobs:
       CLUSTER_NAME: ${{ inputs.environment == 'stag' && 'stgeu' || inputs.environment == 'dev' && inputs.cluster || inputs.environment }}
       PRIVATE_ECR_REGISTRY: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com
       app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
+      IS_MULTI_ARCH_PROD: ${{ inputs.multi-arch && inputs.environment == 'prod' && 'true' || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -240,20 +245,23 @@ jobs:
         if: ${{ inputs.pre-run != '' }}
         run: ${{ inputs.pre-run }}
 
-      - name: Go Build
-        if: ${{ !inputs.arm64 }}
-        env:
-          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
-        run: |
-          make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
-
       - name: Generate ECR Name
         id: ecr-name
         run: |
           echo "ECR_NAME=${{ inputs.ecr-name != '' && inputs.ecr-name || inputs.app-name }}" >> $GITHUB_ENV
 
-      - name: Docker Build Image
-        if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
+      - name: Go Build (AMD64)
+        if: ${{ !inputs.arm64 || env.IS_MULTI_ARCH_PROD == 'true' }}
+        env:
+          GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
+        run: |
+          make ci-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} VERSION=${{ steps.vars.outputs.tag }} BUILD_TIME=${{ steps.vars.outputs.date }} COMMIT_SHA=${GITHUB_SHA} WORK_DIR=${GITHUB_WORKSPACE}
+          if [ "${{ inputs.multi-arch }}" = "true" ]; then
+            mv ${{ inputs.app-name }} ${{ inputs.app-name }}_amd64
+          fi
+
+      - name: Docker Build (AMD64)
+        if: ${{ !inputs.arm64 && env.IS_MULTI_ARCH_PROD == 'false' && env.HAVE_RUN_CMD == 'false' }}
         run: |
           make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ format('firefly-{0}-gitleaks-configuration/gitleaks.toml', env.CLUSTER_NAME) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
@@ -278,8 +286,12 @@ jobs:
           echo "$COMMAND"
           echo "$COMMAND" | bash
 
-      - name: Docker Build Image (ARM64)
-        if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
+          if [ "${{ inputs.multi-arch }}" = "true" ]; then
+            mv ${{ inputs.app-name }} ${{ inputs.app-name }}_arm64
+          fi
+
+      - name: Docker Build (ARM64)
+        if: ${{ inputs.arm64 && env.IS_MULTI_ARCH_PROD == 'false' && env.HAVE_RUN_CMD == 'false' }}
         run: |
           COMMAND=$(make --dry-run ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ format('firefly-{0}-gitleaks-configuration/gitleaks.toml', env.CLUSTER_NAME) }} )
           COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
@@ -312,14 +324,14 @@ jobs:
         if: inputs.ecr-public-registry == '' || inputs.environment != 'prod'
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: AWS ECR Public Login
+      - name: AWS ECR Login (Public)
         if: inputs.ecr-public-registry != '' && inputs.environment == 'prod'
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
 
-      - name: Push Docker Image to ECR
-        if: (env.HAVE_RUN_CMD == 'false')
+      - name: Docker Push to ECR
+        if: (env.IS_MULTI_ARCH_PROD == 'false' && env.HAVE_RUN_CMD == 'false')
         env:
           ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-public-registry != '') && inputs.ecr-public-registry || env.PRIVATE_ECR_REGISTRY }}
         run: |
@@ -332,6 +344,16 @@ jobs:
             docker tag docker.io/library/tempimage ${IMAGE_URI}:latest
             docker push ${IMAGE_URI}:latest
           fi
+
+      - name: Docker Push to ECR (Multi-Arch)
+        if: env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false'
+        env:
+          ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-public-registry != '') && inputs.ecr-public-registry || env.PRIVATE_ECR_REGISTRY }}
+        run: |
+          export IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}
+          export IMAGE_TAG=${GITHUB_SHA::6}
+          docker buildx create --use --name multiarchbuilder
+          make ci-docker-build-multi-arch-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} GITLEAKS_FILE_PATH=s3://${{ format('firefly-{0}-gitleaks-configuration/gitleaks.toml', env.CLUSTER_NAME) }}
 
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
