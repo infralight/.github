@@ -106,6 +106,10 @@ jobs:
         run: |
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
           npm run build
+  
+      - name: Run Jest Tests
+        run: |
+            npm test
 
       - name: Install AWS Cli
         run: |
