@@ -156,7 +156,7 @@ jobs:
           DISTRIBUTION_ID: ${{ secrets.CI_DISTRIBUTION_ID }}
 
       - name: Slack Notification
-        if: ${{ success() }} && ${{ inputs.slack }}
+        if: ${{ success() && inputs.slack }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
