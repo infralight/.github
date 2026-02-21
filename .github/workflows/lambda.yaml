@@ -18,6 +18,11 @@ on:
         type: string
         required: false
         default: ''
+      image-tag:
+        type: string
+        required: false
+        default: 'latest'
+        description: 'ECR image tag to deploy (e.g. commit SHA). Defaults to latest.'
       environment:
         type: string
         default: 'dev'
@@ -62,7 +67,7 @@ jobs:
           # aws_secret_access_key: ${{ secrets.CI_AWS_CRED_SECRET }}
           aws_region: ${{ secrets.CI_REGION }}
           function_name: ${{ inputs.lambda-name == '' && format('{0}-{1}', inputs.environment == 'stag' && 'stgeu' || inputs.environment, inputs.app-name) || format('{0}-{1}', inputs.environment == 'stag' && 'stgeu' || inputs.environment, inputs.lambda-name) }}
-          image_uri: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:latest
+          image_uri: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ inputs.app-name }}:${{ inputs.image-tag }}
       - name: "Notify Slack of deployment status"
         if: ${{ inputs.slack }}
         uses: rtCamp/action-slack-notify@v2
