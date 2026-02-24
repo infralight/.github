@@ -87,6 +87,7 @@ jobs:
           SSO_DOMAINS_PING: ${{ vars.SSO_DOMAINS_PING }}
           SSO_DOMAINS_ONE: ${{ vars.SSO_DOMAINS_ONE }}
           AZURE_DEVOPS_CLIENT_ID: ${{ secrets.CI_AZURE_DEVOPS_CLIENT_ID }}
+          GITHUB_APP_LINK: ${{ vars.CI_GITHUB_APP_LINK }}
 
       - name: Node Cache
         uses: actions/cache@v4
