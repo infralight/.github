@@ -233,7 +233,7 @@ jobs:
       - name: Calculate Semantic Version
         if: ${{ inputs.semver }}
         id: semver
-        uses: ./.github/actions/calc-semver
+        uses: infralight/.github/.github/actions/calc-semver@semver
         with:
           prefix: '${{ inputs.app-name }}/'
           target-env: ${{ inputs.environment }}
