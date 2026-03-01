@@ -111,6 +111,10 @@ on:
         required: false
         default: ""
         type: string
+      semver:
+        type: boolean
+        required: false
+        default: false
     secrets:
       GLOBAL_PAT_USERNAME:
         required: true
@@ -226,11 +230,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      - name: Calculate Semantic Version
+        if: ${{ inputs.semver }}
+        id: semver
+        uses: ./.github/actions/calc-semver
+        with:
+          prefix: '${{ inputs.app-name }}/'
+          target-env: ${{ inputs.environment }}
+
       - name: Set Outputs
         id: vars
         run: |
           echo "tag=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
           echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+          if [ "${{ inputs.semver }}" = "true" ]; then
+            echo "image-tag=${{ steps.semver.outputs.ecr-tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "image-tag=${GITHUB_SHA::6}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -265,7 +282,7 @@ jobs:
         run: |
           make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ format('firefly-{0}-gitleaks-configuration/gitleaks.toml', env.CLUSTER_NAME) }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:latest
-          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
+          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${{ steps.vars.outputs.image-tag }}
 
       - name: Set up QEMU
         if: ${{ inputs.arm64 }}
@@ -323,7 +340,6 @@ jobs:
       - name: AWS ECR Login
         if: inputs.ecr-public-registry == '' || inputs.environment != 'prod'
         uses: aws-actions/amazon-ecr-login@v2
-
       - name: AWS ECR Login (Public)
         if: inputs.ecr-public-registry != '' && inputs.environment == 'prod'
         uses: aws-actions/amazon-ecr-login@v2
@@ -337,8 +353,8 @@ jobs:
         run: |
           IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}
 
-          docker tag docker.io/library/tempimage ${IMAGE_URI}:${GITHUB_SHA::6}
-          docker push ${IMAGE_URI}:${GITHUB_SHA::6}
+          docker tag docker.io/library/tempimage ${IMAGE_URI}:${{ steps.vars.outputs.image-tag }}
+          docker push ${IMAGE_URI}:${{ steps.vars.outputs.image-tag }}
 
           if ${{inputs.latest}}; then
             docker tag docker.io/library/tempimage ${IMAGE_URI}:latest
@@ -351,7 +367,7 @@ jobs:
           ECR_REGISTRY: ${{ (inputs.environment == 'prod' && inputs.ecr-public-registry != '') && inputs.ecr-public-registry || env.PRIVATE_ECR_REGISTRY }}
         run: |
           export IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}
-          export IMAGE_TAG=${GITHUB_SHA::6}
+          export IMAGE_TAG=${{ steps.vars.outputs.image-tag }}
           docker buildx create --use --name multiarchbuilder
           make ci-docker-build-multi-arch-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} GITLEAKS_FILE_PATH=s3://${{ format('firefly-{0}-gitleaks-configuration/gitleaks.toml', env.CLUSTER_NAME) }}
 
