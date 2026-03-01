@@ -19,26 +19,33 @@ Calculates semantic versions based on git history and conventional commits.
 | `next-version` | Next semantic version (e.g., 1.2.3) |
 | `ecr-tag` | ECR tag with environment suffix |
 | `git-tag` | Full git tag with prefix |
-| `should-tag` | Whether git tag should be created |
 
 ## Usage
 
 ```yaml
-- uses: ./.github/actions/calc-semver
+- name: Calculate Version and Tag
+  id: semver
+  uses: ./.github/actions/calc-semver
   with:
     prefix: 'ci-runner-worker/'
     watch-paths: 'components/runners pkg'
     target-env: staging
 
-- name: Tag and Push
-  if: steps.semver.outputs.should-tag == 'true'
+- name: Build and Push
+  if: steps.semver.outputs.changed == 'true'
   run: |
-    git tag "${{ steps.semver.outputs.git-tag }}"
-    git push origin "${{ steps.semver.outputs.git-tag }}"
+    docker build -t my-image:${{ steps.semver.outputs.ecr-tag }} .
+    # Push to ECR using ${{ steps.semver.outputs.ecr-tag }}
 ```
+
+## Behavior
+
+- Automatically creates and pushes git tags for **staging** and **prod** environments
+- Skips git tagging for **dev** environment
+- Only tags when changes are detected in watched paths
 
 ## Tag Format
 
-- **Dev**: `v1.2.3-dev.abc123`
-- **Staging**: `v1.2.3-rc.1`
-- **Prod**: `v1.2.3`
+- **Dev**: `v1.2.3-dev.abc123` (no git tag created)
+- **Staging**: `v1.2.3-rc.1` (git tag created)
+- **Prod**: `v1.2.3` (git tag created)

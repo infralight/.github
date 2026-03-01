@@ -42,6 +42,3 @@ outputs:
   git-tag:
     value: ${{ steps.calculate.outputs.git-tag }}
     description: "Full git tag with prefix (e.g., ci-runner-worker/v1.2.3)"
-  should-tag:
-    value: ${{ steps.calculate.outputs.should-tag }}
-    description: "Whether git tag should be created (true/false)"

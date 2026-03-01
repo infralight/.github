@@ -59,10 +59,18 @@ esac
 
 GIT_TAG="${PREFIX}${ECR_TAG}"
 
-# Should we create git tag? (not for dev)
-SHOULD_TAG="false"
+# Create and push git tag (not for dev)
 if [ "$CHANGED" == "true" ] && [ "$TARGET_ENV" != "dev" ]; then
-    SHOULD_TAG="true"
+    echo "Creating git tag: $GIT_TAG"
+    git tag "$GIT_TAG"
+    git push origin "$GIT_TAG"
+    echo "✓ Tag created and pushed"
+else
+    if [ "$TARGET_ENV" == "dev" ]; then
+        echo "Skipping git tag for dev environment"
+    else
+        echo "No changes detected, skipping git tag"
+    fi
 fi
 
 # Output
@@ -70,6 +78,5 @@ echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
 echo "next-version=$NEXT_V" >> "$GITHUB_OUTPUT"
 echo "ecr-tag=$ECR_TAG" >> "$GITHUB_OUTPUT"
 echo "git-tag=$GIT_TAG" >> "$GITHUB_OUTPUT"
-echo "should-tag=$SHOULD_TAG" >> "$GITHUB_OUTPUT"
 
 echo "Version: $NEXT_V | ECR Tag: $ECR_TAG | Changed: $CHANGED"
