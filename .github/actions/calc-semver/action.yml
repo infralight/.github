@@ -1,0 +1,47 @@
+name: Calculate Semantic Version
+
+description: "Calculates semantic version based on git history and conventional commits"
+
+inputs:
+  prefix:
+    description: "Version tag prefix (e.g., 'ci-runner-worker/')"
+    required: true
+  initial-version:
+    description: "Initial version if no tags exist"
+    default: "1.0.0"
+  watch-paths:
+    description: "Space-separated paths to watch for changes (empty = all paths except .github)"
+    default: ""
+  target-env:
+    description: "Target environment [dev, staging, prod]"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Calculate Semantic Version
+      id: calculate
+      run: ${{ github.action_path }}/semver.sh
+      shell: bash
+      env:
+        PREFIX: ${{ inputs.prefix }}
+        INITIAL_VER: ${{ inputs.initial-version }}
+        WATCH_PATHS: ${{ inputs.watch-paths }}
+        TARGET_ENV: ${{ inputs.target-env }}
+
+outputs:
+  changed:
+    value: ${{ steps.calculate.outputs.changed }}
+    description: "Whether version has changed (true/false)"
+  next-version:
+    value: ${{ steps.calculate.outputs.next-version }}
+    description: "Next semantic version (e.g., 1.2.3)"
+  ecr-tag:
+    value: ${{ steps.calculate.outputs.ecr-tag }}
+    description: "ECR tag with environment suffix (e.g., v1.2.3-rc.1)"
+  git-tag:
+    value: ${{ steps.calculate.outputs.git-tag }}
+    description: "Full git tag with prefix (e.g., ci-runner-worker/v1.2.3)"
+  should-tag:
+    value: ${{ steps.calculate.outputs.should-tag }}
+    description: "Whether git tag should be created (true/false)"
