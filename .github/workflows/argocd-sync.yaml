@@ -78,7 +78,7 @@ jobs:
           echo "ARGOCD_SERVER=${{ secrets.CI_ARGOCD_SERVER }}" >> $GITHUB_ENV
           echo "FETCHER_NAME=${{ steps.string.outputs.uppercase }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
-          echo "TAG=${{ inputs.tag || format('{0}', github.sha) }}" >> $GITHUB_ENV
+          echo "TAG=${{ inputs.tag != '' && inputs.tag || '${GITHUB_SHA::6}' }}" >> $GITHUB_ENV
           echo "GITHUB_TOKEN=${{ secrets.CI_GITHUB_TOKEN }}" >> $GITHUB_ENV
           echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
           if [[ "${{ inputs.environment }}" == "dev" ]]; then
