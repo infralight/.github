@@ -107,9 +107,10 @@ jobs:
           echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
       - name: "Run Trivy vulnerability scanner"
         if: ${{ inputs.trivy-scan == 'true' }}
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # master (v0.69.2)
         with:
           image-ref: docker.io/library/tempimage
+          version: 'v0.69.2'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
