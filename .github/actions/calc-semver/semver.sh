@@ -42,7 +42,7 @@ case "$TARGET_ENV" in
     dev)
         ECR_TAG="v${NEXT_V}-dev.${GITHUB_SHA::6}"
         ;;
-    staging)
+    stag)
         LATEST_RC=$(git tag -l "${PREFIX}v${NEXT_V}-rc.*" | sort -V | tail -n1)
         if [ -z "$LATEST_RC" ]; then
             RC_NUM=1
