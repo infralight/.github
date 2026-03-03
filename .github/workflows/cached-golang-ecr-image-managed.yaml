@@ -241,9 +241,12 @@ jobs:
         if: ${{ inputs.semver }}
         id: semver
         uses: infralight/.github/.github/actions/calc-semver@semver
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           prefix: '${{ inputs.app-name }}/'
           target-env: ${{ inputs.environment }}
+        
 
       - name: Set Outputs
         id: vars
