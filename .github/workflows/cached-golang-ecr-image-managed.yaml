@@ -115,6 +115,10 @@ on:
         type: boolean
         required: false
         default: false
+    outputs:
+      image-tag:
+        description: "The image tag used (SHA or semver)"
+        value: ${{ jobs.build-push-ecr.outputs.image-tag }}
     secrets:
       GLOBAL_PAT_USERNAME:
         required: true
@@ -178,6 +182,8 @@ jobs:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
     runs-on: 'ubuntu-24.04-amd'
+    outputs:
+      image-tag: ${{ steps.vars.outputs.image-tag }}
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
@@ -242,11 +248,12 @@ jobs:
       - name: Set Outputs
         id: vars
         run: |
-          echo "tag=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
           echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
           if [ "${{ inputs.semver }}" = "true" ]; then
+            echo "tag=${{ steps.semver.outputs.ecr-tag }}" >> "$GITHUB_OUTPUT"
             echo "image-tag=${{ steps.semver.outputs.ecr-tag }}" >> "$GITHUB_OUTPUT"
           else
+            echo "tag=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
             echo "image-tag=${GITHUB_SHA::6}" >> "$GITHUB_OUTPUT"
           fi
 
