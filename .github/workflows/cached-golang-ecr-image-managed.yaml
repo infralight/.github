@@ -242,7 +242,7 @@ jobs:
         id: semver
         uses: infralight/.github/.github/actions/calc-semver@semver
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GLOBAL_PAT }}
         with:
           prefix: '${{ inputs.app-name }}/'
           target-env: ${{ inputs.environment }}
