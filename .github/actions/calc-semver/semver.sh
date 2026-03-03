@@ -62,6 +62,10 @@ GIT_TAG="${PREFIX}${ECR_TAG}"
 # Create and push git tag (not for dev)
 if [ "$CHANGED" == "true" ] && [ "$TARGET_ENV" != "dev" ]; then
     echo "Creating git tag: $GIT_TAG"
+
+    # Configure git to use GITHUB_TOKEN for authentication
+    git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+
     git tag "$GIT_TAG"
     git push origin "$GIT_TAG"
     echo "✓ Tag created and pushed"
