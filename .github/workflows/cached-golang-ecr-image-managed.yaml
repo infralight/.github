@@ -133,11 +133,6 @@ on:
       CI_ACCOUNT_ID:
         required: true
 
-permissions:
-  contents: write
-  actions: write
-  id-token: write
-
 jobs:
   tests:
     name: Run Tests
