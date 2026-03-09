@@ -134,7 +134,6 @@ on:
         required: true
 
 permissions:
-  contents: read
   actions: write
   id-token: write
 
