@@ -74,6 +74,7 @@ else
         echo "Skipping git tag for dev environment"
     else
         echo "No changes detected, skipping git tag"
+        exit 1
     fi
 fi
 
