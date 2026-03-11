@@ -111,9 +111,10 @@ jobs:
           docker tag tmpimage ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
           docker tag tmpimage ${{ secrets.PROD_ACCOUNT_ID }}.dkr.ecr.${{ secrets.PROD_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${GITHUB_SHA::6}
       - name: "Run Trivy vulnerability scanner"
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # master (v0.69.2)
         with:
           image-ref: tempimage
+          version: 'v0.69.2'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
