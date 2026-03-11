@@ -235,7 +235,7 @@ jobs:
       - name: Calculate Semantic Version
         if: ${{ inputs.semver }}
         id: semver
-        uses: infralight/.github/.github/actions/calc-semver@semver
+        uses: infralight/.github/.github/actions/calc-semver@master
         env:
           GITHUB_TOKEN: ${{ secrets.GLOBAL_PAT }}
         with:
