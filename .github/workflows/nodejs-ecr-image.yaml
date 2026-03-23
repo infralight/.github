@@ -25,17 +25,17 @@ jobs:
     name: "Build job"
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - name: "[Build] configure git for private modules"
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: "[Build]: configure AWS credentials stag"
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@6a64f289c4a4b67a1e2c44cc4bd9d6f7bc59b156 # v1
         with:
           aws-access-key-id: ${{ secrets.CI_NEW_STAG_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.CI_NEW_STAG_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.NEW_STAG_REGION }}
       - name: "Build: Amazon ECR \"Login\""
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1
         id: login-ecr-stage
       - name: "[Build]: build image & upload to ECR stage"
         id: docker-build-stage
@@ -61,14 +61,14 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPO:latest
       - name: "[Build]: configure AWS credentials"
         if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.env == 'prod' && github.event.inputs.force)
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@6a64f289c4a4b67a1e2c44cc4bd9d6f7bc59b156 # v1
         with:
           aws-access-key-id: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.PROD_REGION }}
       - name: "Build: Amazon ECR \"Login\""
         if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.env == 'prod' && github.event.inputs.force)
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1
         id: login-ecr-prod-us
       - name: "[Build]: tag built image as latest & upload ECR prod"
         id: docker-build-prod-us
@@ -135,37 +135,37 @@ jobs:
           echo "SLACK_WEBHOOK=${{ secrets.PROD_DEPLOYMENT_SLACK_CHANNEL }}" >> $GITHUB_ENV
       - name: "[ArgoCD]: modify application revision target to ${{github.ref_name}}"
         if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@9c33deabd2414ebf68aaeea1daf820dddf0c5549 # v1.5.0
         with:
           command: app set "${{matrix.app}}"
           options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --revision ${{github.ref_name}} --grpc-web
       - name: "[ArgoCD]: update docker image in ArgoCD Application ${{ matrix.app }} tag to ${{ matrix.tag }}"
         if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@9c33deabd2414ebf68aaeea1daf820dddf0c5549 # v1.5.0
         with:
           command: app set "${{matrix.app}}"
           options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --helm-set "argocd.tag=${{ matrix.tag }}" --grpc-web
       - name: "[ArgoCD]: trigger refresh"
         if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@9c33deabd2414ebf68aaeea1daf820dddf0c5549 # v1.5.0
         with:
           command: app get "${{matrix.app}}"
           options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --hard-refresh
       - name: "[ArgoCD]: trigger sync"
         if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@9c33deabd2414ebf68aaeea1daf820dddf0c5549 # v1.5.0
         with:
           command: app sync "${{matrix.app}}"
           options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --grpc-web
       - name: "[ArgoCD]: wait for deploy to complete"
         if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
-        uses: clowdhaus/argo-cd-action/@v1.5.0
+        uses: clowdhaus/argo-cd-action/@9c33deabd2414ebf68aaeea1daf820dddf0c5549 # v1.5.0
         with:
           command: app wait "${{matrix.app}}" --timeout 300
           options: --server ${{ matrix.argourl }} --auth-token ${{ env.ARGOCD_TOKEN }} --grpc-web
       - name: "Notify Slack of deployment status"
         if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && ((github.event.inputs.env == 'prod' && github.event.inputs.force) || (github.event.inputs.env == 'stag' && matrix.env != 'prod')))
-        uses: rtCamp/action-slack-notify@v2
+        uses: rtCamp/action-slack-notify@cdf0a2130cbcdfd82ba5fcac8e076370bf381b36 # v2
         env:
           SLACK_COLOR: ${{ job.status }}
           SLACK_ICON: https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png

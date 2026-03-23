@@ -94,9 +94,9 @@ jobs:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - name: "Set up Go"
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
         with:
           go-version: ${{ inputs.go-version }}
       - name: "[Build] configure git for private modules"
@@ -121,13 +121,13 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'          
       - name: "[stag] configure aws credentials"
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@6a64f289c4a4b67a1e2c44cc4bd9d6f7bc59b156 # v1
         with:
           aws-access-key-id: ${{ secrets.STAG_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.STAG_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.STAG_AWS_REGION }}
       - name: "[stag] login ecr"
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1
         id: login-ecr-stag         
       - name: "[stag] upload image"
         if: (env.HAVE_RUN_CMD == 'false')
@@ -136,14 +136,14 @@ jobs:
           if ${inputs.latest} ; then docker push ${{ secrets.STAG_ACCOUNT_ID }}.dkr.ecr.${{ secrets.STAG_AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:latest; fi
       - name: "[prod] configure aws credentials"
         if: (inputs.prod)
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@6a64f289c4a4b67a1e2c44cc4bd9d6f7bc59b156 # v1
         with:
           aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.PROD_AWS_REGION }}
       - name: "[prod] login ecr"
         if: (inputs.prod)      
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1
         id: login-ecr-prod             
       - name: "[prod] upload image"
         if: (env.HAVE_RUN_CMD == 'false' && inputs.prod)

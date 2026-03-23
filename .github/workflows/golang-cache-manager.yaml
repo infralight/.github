@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.branch || 'main' }}
 
@@ -38,7 +38,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@master
+        uses: infralight/.github/.github/actions/calc-cache-vars@5a6cb3462fa8ca2fb0a7564a03f5f6c475fa6306 # master
         with:
           app-name: ${{ inputs.app-name }}
           architecture: arm64
@@ -49,7 +49,7 @@ jobs:
       - name: Go Cache Restore
         if: steps.cache.outputs.is-invoker == 'no'
         id: go-cache-restore
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ${{ steps.cache.outputs.go-build }}
@@ -57,14 +57,14 @@ jobs:
           key: ${{ steps.cache.outputs.cache-key }}
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         with:
           go-version: ${{ steps.cache.outputs.go-version }}
 
       - name: Setup QEMU
         if: steps.cache.outputs.is-invoker == 'no'
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
         with:
           platforms: "arm64"
 
@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.branch || 'main' }}
 
@@ -92,7 +92,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@master
+        uses: infralight/.github/.github/actions/calc-cache-vars@5a6cb3462fa8ca2fb0a7564a03f5f6c475fa6306 # master
         with:
           app-name: ${{ inputs.app-name }}
           architecture: arm64
@@ -103,7 +103,7 @@ jobs:
       - name: Go Cache Restore
         if: steps.cache.outputs.is-invoker == 'no'
         id: go-cache-restore
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ${{ steps.cache.outputs.go-build }}
@@ -127,13 +127,13 @@ jobs:
 
       - name: Setup Go
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
         with:
           go-version: ${{ steps.cache.outputs.go-version }}
 
       - name: Setup QEMU
         if: steps.cache.outputs.is-invoker == 'no'
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
         with:
           platforms: "arm64"
 
