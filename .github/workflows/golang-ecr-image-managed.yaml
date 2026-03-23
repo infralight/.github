@@ -101,11 +101,11 @@ jobs:
     name: Run Tests
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
         with:
           go-version: ${{ inputs.go-version }}
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - name: Configure git for private modules
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - run: make ${{ inputs.test-name != '' && inputs.test-name || format('test-{0}', inputs.app-name) }}
@@ -117,16 +117,16 @@ jobs:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - name: "Set up Go"
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
         with:
           go-version: ${{ inputs.go-version }}
       - name: "[Build] configure git for private modules"
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: "configure aws credentials"
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@6a64f289c4a4b67a1e2c44cc4bd9d6f7bc59b156 # v1
         with:
           aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
           aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
@@ -145,7 +145,7 @@ jobs:
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.ecr-prefix }}${{ env.ECR_NAME }}:${GITHUB_SHA::6}
       - name: Set up QEMU
         if: ${{ inputs.arm64 }}
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
         with:
           platforms: "arm64"
       - name: "Build [arm64]"
@@ -181,7 +181,7 @@ jobs:
           output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}-results.json
       - name: Upload Trivy scan results to S3
         if: ${{ inputs.environment == 'dev' }}
-        uses: jakejarvis/s3-sync-action@master
+        uses: jakejarvis/s3-sync-action@7ed8b112447abb09f1da74f3466e4194fc7a6311 # master
         with:
           args: --exclude '*' --include ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}-results.json
         env:
@@ -190,13 +190,13 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_CRED_SECRET }}
           AWS_REGION: ${{ secrets.CI_REGION }}
       - name: "configure aws credentials"
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@6a64f289c4a4b67a1e2c44cc4bd9d6f7bc59b156 # v1
         with:
           aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
           aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
           aws-region: ${{ secrets.CI_REGION }}
       - name: "login ecr"
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1
         id: login-ecr
       - name: "upload image"
         if: (env.HAVE_RUN_CMD == 'false')

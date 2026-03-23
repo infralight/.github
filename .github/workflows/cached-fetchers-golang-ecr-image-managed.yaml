@@ -139,11 +139,11 @@ jobs:
     runs-on: 'ubuntu-24.04'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@master
+        uses: infralight/.github/.github/actions/calc-cache-vars@5a6cb3462fa8ca2fb0a7564a03f5f6c475fa6306 # master
         with:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
           architecture: ${{ inputs.architecture }}
@@ -152,7 +152,7 @@ jobs:
 
       - name: Go Cache Restore
         id: go-cache-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ${{ steps.cache.outputs.go-build }}
@@ -162,7 +162,7 @@ jobs:
             ${{ steps.cache.outputs.cache-key-any }}
             ${{ steps.cache.outputs.cache-key-any2 }}
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
         with:
           go-version: ${{ steps.cache.outputs.go-version }}
 
@@ -188,7 +188,7 @@ jobs:
       IS_MULTI_ARCH_PROD: ${{ inputs.multi-arch && inputs.environment == 'prod' && 'true' || 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.branch }}
           fetch-depth: ${{ inputs.semver && '0' || '1' }}
@@ -199,7 +199,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@master
+        uses: infralight/.github/.github/actions/calc-cache-vars@5a6cb3462fa8ca2fb0a7564a03f5f6c475fa6306 # master
         with:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
           architecture: ${{ inputs.architecture }}
@@ -208,7 +208,7 @@ jobs:
 
       - name: Go Cache Restore
         id: go-cache-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ${{ steps.cache.outputs.go-build }}
@@ -219,7 +219,7 @@ jobs:
             ${{ steps.cache.outputs.cache-key-any2 }}
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
         with:
           go-version: ${{ steps.cache.outputs.go-version }}
 
@@ -235,7 +235,7 @@ jobs:
       - name: Calculate Semantic Version
         if: ${{ inputs.semver }}
         id: semver
-        uses: infralight/.github/.github/actions/calc-semver@master
+        uses: infralight/.github/.github/actions/calc-semver@5a6cb3462fa8ca2fb0a7564a03f5f6c475fa6306 # master
         env:
           GITHUB_TOKEN: ${{ secrets.GLOBAL_PAT }}
         with:
@@ -255,7 +255,7 @@ jobs:
           fi
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
         env:
           environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
         with:
@@ -291,7 +291,7 @@ jobs:
 
       - name: Set up QEMU
         if: ${{ inputs.arm64 }}
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
         with:
           platforms: "arm64"
 
@@ -345,10 +345,10 @@ jobs:
 
       - name: AWS ECR Login
         if: inputs.ecr-public-registry == '' || inputs.environment != 'prod'
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@c962da2960ed15f492addc26fffa274485265950 # v2
       - name: AWS ECR Login (Public)
         if: inputs.ecr-public-registry != '' && inputs.environment == 'prod'
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@c962da2960ed15f492addc26fffa274485265950 # v2
         with:
           registry-type: public
 
