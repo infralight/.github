@@ -267,6 +267,7 @@ jobs:
         uses: docker/setup-qemu-action@v2
         with:
           platforms: "arm64"
+          image: 'public.ecr.aws/eks-distro-build-tooling/binfmt-misc:qemu-v7.0.0'
 
       - name: Go Build [arm64]
         if: ${{ inputs.arm64 }}
