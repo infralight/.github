@@ -199,7 +199,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@5a6cb3462fa8ca2fb0a7564a03f5f6c475fa6306 # master
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
         with:
           app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
           architecture: ${{ inputs.architecture }}
@@ -235,7 +235,7 @@ jobs:
       - name: Calculate Semantic Version
         if: ${{ inputs.semver }}
         id: semver
-        uses: infralight/.github/.github/actions/calc-semver@5a6cb3462fa8ca2fb0a7564a03f5f6c475fa6306 # master
+        uses: infralight/.github/.github/actions/calc-semver@master
         env:
           GITHUB_TOKEN: ${{ secrets.GLOBAL_PAT }}
         with:

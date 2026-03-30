@@ -59,7 +59,7 @@ esac
 
 GIT_TAG="${PREFIX}${ECR_TAG}"
 
-# Create and push git tag (not for dev)
+# Create and push git tag (only for non-dev environments with changes)
 if [ "$CHANGED" == "true" ] && [ "$TARGET_ENV" != "dev" ]; then
     echo "Creating git tag: $GIT_TAG"
 
@@ -72,9 +72,8 @@ if [ "$CHANGED" == "true" ] && [ "$TARGET_ENV" != "dev" ]; then
 else
     if [ "$TARGET_ENV" == "dev" ]; then
         echo "Skipping git tag for dev environment"
-    else
-        echo "No changes detected, skipping git tag"
-        exit 1
+    elif [ "$CHANGED" == "false" ]; then
+        echo "No changes detected - reusing existing version without creating git tag"
     fi
 fi
 
