@@ -52,7 +52,7 @@ case "$TARGET_ENV" in
         fi
         ECR_TAG="v${NEXT_V}-rc.${RC_NUM}"
         ;;
-    prod)
+    prod|prod-eu)
         ECR_TAG="v${NEXT_V}"
         ;;
 esac
