@@ -95,7 +95,15 @@ jobs:
         run: |
           YQ_VERSION="v4.44.6"
           ARCH="$(dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/aarch64/arm64/' | sed 's/x86_64/amd64/'))"
+          if [ "$ARCH" = "arm64" ]; then
+            YQ_SHA256="9477ac3cc447b6c083986129e35af8122eb2b938fe55c9c3e40436fb966e5813"
+          elif [ "$ARCH" = "amd64" ]; then
+            YQ_SHA256="0c2b24e645b57d8e7c0566d18643a6d4f5580feeea3878127354a46f2a1e4598"
+          else
+            echo "Unsupported architecture: $ARCH" && exit 1
+          fi
           wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${ARCH}"
+          echo "${YQ_SHA256}  /usr/local/bin/yq" | sha256sum -c -
           chmod +x /usr/local/bin/yq
           yq --version
       - name: "UPDATE IMAGE TAG"
