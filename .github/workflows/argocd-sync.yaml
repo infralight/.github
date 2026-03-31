@@ -91,31 +91,18 @@ jobs:
           path: tmp/helm-values
           ref: main
           token: ${{ secrets.CI_PAT }}
-      - name: Install yq
-        run: |
-          YQ_VERSION="v4.44.6"
-          ARCH="$(dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/aarch64/arm64/' | sed 's/x86_64/amd64/'))"
-          if [ "$ARCH" = "arm64" ]; then
-            YQ_SHA256="9477ac3cc447b6c083986129e35af8122eb2b938fe55c9c3e40436fb966e5813"
-          elif [ "$ARCH" = "amd64" ]; then
-            YQ_SHA256="0c2b24e645b57d8e7c0566d18643a6d4f5580feeea3878127354a46f2a1e4598"
-          else
-            echo "Unsupported architecture: $ARCH" && exit 1
-          fi
-          wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${ARCH}"
-          echo "${YQ_SHA256}  /usr/local/bin/yq" | sha256sum -c -
-          chmod +x /usr/local/bin/yq
-          yq --version
       - name: "UPDATE IMAGE TAG"
         id: iacathon
         if: ${{ inputs.fetcherName == 'iacathon-crawler' }}
-        run: |
-          yq -i '.tagsOverride.IACATHON_CONTAINER_IMAGE = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/iacathon-crawler:{2}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+        uses: mikefarah/yq@c5cbf9760bc3c5b526f2b2ba65eaaad3921019a9 # master
+        with:
+          cmd: yq -i '.tagsOverride.IACATHON_CONTAINER_IMAGE = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/iacathon-crawler:{2}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
       - name: "UPDATE IMAGE TAG"
         id: fetcher
         if: ${{ inputs.fetcherName != 'iacathon-crawler' }}
-        run: |
-          yq -i '${{ inputs.fetcherName != '' && format('.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || inputs.imageTagPath }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+        uses: mikefarah/yq@c5cbf9760bc3c5b526f2b2ba65eaaad3921019a9 # master
+        with:
+          cmd: yq -i '${{ inputs.fetcherName != '' && format('.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || inputs.imageTagPath }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
       - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
         with:
           cwd: 'tmp/helm-values'
