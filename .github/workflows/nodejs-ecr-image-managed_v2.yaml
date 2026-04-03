@@ -68,6 +68,11 @@ on:
         required: true
       CI_AWS_CRED_SECRET:
         required: true
+
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   tests:
     name: "Run Golang Tests"
@@ -119,13 +124,15 @@ jobs:
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2
       - name: "configure aws credentials"
-        uses: aws-actions/configure-aws-credentials@6a64f289c4a4b67a1e2c44cc4bd9d6f7bc59b156 # v1
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        env:
+          environment: ${{ inputs.environment }}
         with:
-          aws-access-key-id: ${{ secrets.CI_AWS_CRED_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_AWS_CRED_SECRET }}
+          role-to-assume: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
+          role-session-name: runner
           aws-region: ${{ vars.CI_REGION }}
       - name: "login ecr"
-        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1
+        uses: aws-actions/amazon-ecr-login@c962da2960ed15f492addc26fffa274485265950 # v2
         id: login-ecr
       - name: "upload image"
         if: (env.HAVE_RUN_CMD == 'false')
