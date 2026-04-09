@@ -117,9 +117,9 @@ on:
       GLOBAL_PAT:
         required: true
       CI_AWS_CRED_KEY:
-        required: true
+        required: false
       CI_AWS_CRED_SECRET:
-        required: true
+        required: false
       CI_REGION:
         required: true
       CI_ACCOUNT_ID:
