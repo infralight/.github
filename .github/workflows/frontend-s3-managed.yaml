@@ -108,14 +108,14 @@ jobs:
         env:
           CI: "false"
           NODE_OPTIONS: "--max-old-space-size=9728"
-          GENERATE_SOURCEMAP: ${{ inputs.environment == 'dev' && 'true' || 'false' }}
+          GENERATE_SOURCEMAP: ${{ startsWith(inputs.environment, 'env') && 'true' || 'false' }}
           REACT_APP_RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
         run: |
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
           npm run build
 
       - name: LogRocket Create Release and Upload Source Maps
-        if: ${{ inputs.environment == 'dev' }}
+        if: ${{ startsWith(inputs.environment, 'env') }}
         env:
           LOGROCKET_API_KEY: ${{ secrets.CI_LOGROCKET_API_KEY }}
         run: |
