@@ -72,6 +72,10 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
+      - name: Set environment varible
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_SHA::6}" >> $GITHUB_ENV
+          
       - name: Setup config.js With Environment
         run: ./scripts/set_vars.sh
         shell: bash
@@ -104,9 +108,27 @@ jobs:
         env:
           CI: "false"
           NODE_OPTIONS: "--max-old-space-size=9728"
+          GENERATE_SOURCEMAP: ${{ inputs.environment == 'dev' && 'true' || 'false' }}
+          REACT_APP_RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
         run: |
           npm install -g --legacy-peer-deps --only=prod --unsafe-perm
           npm run build
+
+      - name: LogRocket Create Release and Upload Source Maps
+        if: ${{ inputs.environment == 'dev' }}
+        env:
+          LOGROCKET_API_KEY: ${{ secrets.CI_LOGROCKET_API_KEY }}
+        run: |
+          npx logrocket-cli release ${{ env.RELEASE_VERSION }} \
+            --project duddjo/firefly-dev \
+            --apikey $LOGROCKET_API_KEY \
+            --verbose
+          npx logrocket-cli upload build/static/js/*.map \
+            --release ${{ env.RELEASE_VERSION }} \
+            --project duddjo/firefly-dev \
+            --apikey $LOGROCKET_API_KEY \
+            --verbose
+          find build -name "*.map" -type f -delete
   
       - name: Run Jest Tests
         run: |
