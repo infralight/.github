@@ -129,7 +129,7 @@ jobs:
             --release ${{ env.RELEASE_VERSION }} \
             --project duddjo/firefly-dev \
             --apikey $LOGROCKET_API_KEY \
-            --urlPrefix https://app-env3.dev.firefly.ai/static/js/ \
+            --urlPrefix "~/static/js/" \
             --verbose
           find build -name "*.map" -type f -delete
   
