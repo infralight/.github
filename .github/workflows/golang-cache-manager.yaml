@@ -38,7 +38,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@5a6cb3462fa8ca2fb0a7564a03f5f6c475fa6306 # master
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
         with:
           app-name: ${{ inputs.app-name }}
           architecture: arm64
@@ -92,7 +92,7 @@ jobs:
 
       - name: Go Cache Preflights
         id: cache
-        uses: infralight/.github/.github/actions/calc-cache-vars@5a6cb3462fa8ca2fb0a7564a03f5f6c475fa6306 # master
+        uses: infralight/.github/.github/actions/calc-cache-vars@master
         with:
           app-name: ${{ inputs.app-name }}
           architecture: arm64
@@ -117,7 +117,7 @@ jobs:
         run: |
           for file in .github/workflows/ci-*; do
             if grep -q "cached-.*golang-.*\.yaml" "$file"; then
-              go_version=$(grep 'go-version:' "$file" | sed 's/.*go-version: \(.*\)/\1/' | tr -d "'")
+              go_version=$(grep -m 1 'go-version:' "$file" | sed 's/.*go-version: \(.*\)/\1/' | tr -d "'")
               app_name=$(grep -m 1 'app-name:' "$file" | sed 's/.*app-name: \(.*\)/\1/')
               if [[ $app_name != *"$"* ]]; then
                 gh workflow run firefly-cache-manager.yaml -f app-name="$app_name" -f go-version="$go_version"
