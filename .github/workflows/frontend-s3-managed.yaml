@@ -53,6 +53,8 @@ on:
         required: true
       CI_AZURE_DEVOPS_CLIENT_ID:
         required: true
+      CI_LOGROCKET_API_KEY:
+        required: false
 
 permissions:
   id-token: write
