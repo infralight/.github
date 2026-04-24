@@ -110,19 +110,19 @@ jobs:
       - name: Upload Files
         env:
           AWS_S3_BUCKET: ${{ inputs.s3-bucket }}
-          OUTPUT_PATH: ${{ inputs.output-path }}
+          BUILD_PATH: ${{ inputs.build-path }}
         run: |
           #  Upload all files except index.html
-          aws s3 sync $OUTPUT_PATH s3://$AWS_S3_BUCKET \
+          aws s3 sync $BUILD_PATH s3://$AWS_S3_BUCKET \
             --acl public-read \
             --follow-symlinks \
             --delete \
             --exclude 'files/*' \
-            --exclude '$OUTPUT_PATH/index.html' \
+            --exclude '$BUILD_PATH/index.html' \
             --region $AWS_REGION
 
           # Upload index.html with no-cache
-          aws s3 cp $OUTPUT_PATH/index.html s3://$AWS_S3_BUCKET/index.html \
+          aws s3 cp $BUILD_PATH/index.html s3://$AWS_S3_BUCKET/index.html \
             --acl public-read \
             --cache-control "no-cache, no-store, must-revalidate" \
             --region $AWS_REGION
