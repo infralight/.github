@@ -1,0 +1,146 @@
+name: Reusable Frontend Build
+
+on:
+  workflow_call:
+    inputs:
+      s3-bucket:
+        type: string
+        required: true
+      aws-region:
+        type: string
+        default: 'us-east-1'
+      node-version:
+        default: '20.x'
+        required: false
+        type: string
+      custom:
+        type: boolean
+        required: false
+        default: false
+      run-tests:
+        type: boolean
+        required: false
+        default: false
+      trivy-scan:
+        type: boolean
+        required: false
+        default: false
+      branch:
+        type: string
+        required: true
+      environment:
+        type: string
+        default: 'dev'
+        required: false
+      slack:
+        type: boolean
+        default: true
+        required: false
+    secrets:
+      CI_ACCOUNT_ID:
+        required: true
+      # CI_BACKEND_URL:
+      #   required: true
+      # CI_AUTH0_CLIENT_ID:
+      #   required: true
+      # CI_AUTH0_DOMAIN:
+      #   required: true
+      CI_SLACK_WEBHOOK:
+        required: true
+      CI_DISTRIBUTION_ID:
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    environment: ${{ inputs.environment }}
+    name: "Frontend - Build & Deploy"
+    runs-on: [self-hosted, frontend, "${{ inputs.environment }}"]
+    env:
+      AWS_REGION: ${{ inputs.aws-region }}
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+
+      - name: "Setup Node ${{ inputs.node-version }}"
+        uses: actions/setup-node@969bd2663942d722d85b6a8626225850c2f7be4b # v3.5.0
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Node Cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        id: npm-cache
+        with:
+          path: |
+            **/node_modules
+            **/.eslintcache
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Frontend Build (npm)
+        env:
+          NODE_OPTIONS: "--max-old-space-size=9728"
+        run: |
+          npm install -g --legacy-peer-deps --only=prod --unsafe-perm
+          npm run build
+  
+      - name: Run Jest Tests
+        run: |
+            npm test
+
+      - name: Install AWS Cli
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+          unzip -q /tmp/awscliv2.zip -d /tmp
+          rm /tmp/awscliv2.zip
+          sudo /tmp/aws/install --update
+          rm -rf /tmp/aws/
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        env:
+          environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.CI_ACCOUNT_ID }}:role/${{ env.environment }}-github-actions-oidc
+          role-session-name: runner
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Upload Files
+        env:
+          AWS_S3_BUCKET: ${{ inputs.s3-bucket }}
+        run: |
+          #  Upload all files except index.html
+          aws s3 sync build s3://$AWS_S3_BUCKET \
+            --acl public-read \
+            --follow-symlinks \
+            --delete \
+            --exclude 'files/*' \
+            --exclude 'build/index.html' \
+            --region $AWS_REGION
+
+          # Upload index.html with no-cache
+          aws s3 cp build/index.html s3://$AWS_S3_BUCKET/index.html \
+            --acl public-read \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --region $AWS_REGION
+
+      - name: Invalidate Cloudfront
+        uses: docker://public.ecr.aws/firefly/cloudfront-invalidation:v0.0.5
+        env:
+          PATHS: '/*'
+          DISTRIBUTION_ID: ${{ secrets.CI_DISTRIBUTION_ID }}
+
+      - name: Slack Notification
+        if: ${{ success() && inputs.slack }}
+        uses: rtCamp/action-slack-notify@cdf0a2130cbcdfd82ba5fcac8e076370bf381b36 # v2
+        env:
+          SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
+          SLACK_ICON: https://assets-global.website-files.com/5d514fd9493b0575f03520bd/5d8e0b39fd776a3c238e8753_icons8_infinity_large_filled_2.svg
+          SLACK_MESSAGE: "Frontend (${{ inputs.environment }}) env successfully deployed from ${{ github.ref }}"
+          SLACK_TITLE: "Frontend (${{ inputs.environment }}) deployment notification"
+          SLACK_USERNAME: cicdBot
+          SLACK_WEBHOOK: ${{ secrets.CI_SLACK_WEBHOOK }}
