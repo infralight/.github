@@ -58,7 +58,8 @@ jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Frontend - Build & Deploy"
-    runs-on: [self-hosted, frontend, "${{ inputs.environment }}"]
+    # runs-on: [self-hosted, frontend, "${{ inputs.environment }}"]
+    runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ inputs.aws-region }}
     steps:
