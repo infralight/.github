@@ -53,6 +53,10 @@ on:
         required: true
       CI_AZURE_DEVOPS_CLIENT_ID:
         required: true
+      CI_GROWTHBOOK_CLIENT_ID:
+        required: false
+      CI_GROWTHBOOK_DECRYPTION_KEY:
+        required: false
 
 permissions:
   id-token: write
@@ -83,6 +87,8 @@ jobs:
           SSO_DOMAINS_ONE: ${{ vars.SSO_DOMAINS_ONE }}
           AZURE_DEVOPS_CLIENT_ID: ${{ secrets.CI_AZURE_DEVOPS_CLIENT_ID }}
           GITHUB_APP_LINK: ${{ vars.CI_GITHUB_APP_LINK }}
+          GROWTHBOOK_CLIENT_ID: ${{ secrets.CI_GROWTHBOOK_CLIENT_ID }}
+          GROWTHBOOK_DECRYPTION_KEY: ${{ secrets.CI_GROWTHBOOK_DECRYPTION_KEY }}
 
       - name: "Setup Node ${{ inputs.node-version }}"
         uses: actions/setup-node@969bd2663942d722d85b6a8626225850c2f7be4b # v3.5.0
