@@ -162,7 +162,7 @@ jobs:
             ${{ steps.cache.outputs.cache-key-any }}
             ${{ steps.cache.outputs.cache-key-any2 }}
 
-      - uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v2
         with:
           go-version: ${{ steps.cache.outputs.go-version }}
 
@@ -219,7 +219,7 @@ jobs:
             ${{ steps.cache.outputs.cache-key-any2 }}
 
       - name: Setup Go
-        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v2
         with:
           go-version: ${{ steps.cache.outputs.go-version }}
 
