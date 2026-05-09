@@ -112,6 +112,11 @@ jobs:
         run: |
           echo "RELEASE_VERSION=${GITHUB_SHA::6}" >> $GITHUB_ENV
 
+      - name: Set K8S API URL (Prod) # TODO: Check if still in-use
+        if: inputs.environment == 'prod'
+        run: |
+          echo "K8S_API=https://k8s-api.prod.external.api.infralight.cloud" >> $GITHUB_ENV
+
       - name: Frontend Build (npm)
         env:
           CI: "false"
