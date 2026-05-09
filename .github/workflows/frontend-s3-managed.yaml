@@ -57,6 +57,8 @@ on:
         required: false
       CI_GROWTHBOOK_DECRYPTION_KEY:
         required: false
+      CI_LOGROCKET_API_KEY:
+        required: false
 
 permissions:
   id-token: write
