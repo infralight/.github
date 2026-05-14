@@ -96,44 +96,50 @@ jobs:
     outputs:
       tag: ${{ steps.build.outputs.tag }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: "Setup Node v${{ inputs.node-version }}"
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: ${{ inputs.node-version }}
 
+      - name: Setup QEMU (ARM64)
+        if: ${{ inputs.arm64 }}
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
+        with:
+          platforms: "arm64"
+
       - name: Configure Git for Private Modules
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
         run: git config --global url."https://${{ secrets.GLOBAL_PAT }}:x-oauth-basic@github.com".insteadOf "https://github.com"
 
-      - name: Build Docker Image
+
+      - name: Node Build
+        run: |
+          make ci-build-${{ inputs.app-name }} NPM_TOKEN=${{ secrets.GLOBAL_PAT }}
+
+      - name: Docker Build (ARM64)
+        id: build-arm64
+        if: ${{ inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
+        env:
+          CI_ENV: ${{ inputs.environment }}
+        run: |
+          COMMAND=$(make --dry-run ci-docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} NPM_TOKEN=${{ secrets.GLOBAL_PAT }})
+          COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
+          COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
+          echo "$COMMAND" && echo "$COMMAND" | bash
+          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
+          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
+          echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
+
+      - name: Docker Build (AMD64)
         id: build
         if: ${{ !inputs.arm64 && env.HAVE_RUN_CMD == 'false' }}
         env:
           CI_ENV: ${{ inputs.environment }}
         run: |
-          make docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }}
-          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
-          docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
-          echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
-
-      - name: Setup QEMU
-        if: ${{ inputs.arm64 }}
-        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
-        with:
-          platforms: "arm64"
-
-      - name: Build Docker Image [arm64]
-        id: build-arm64
-        if: ${{ env.HAVE_RUN_CMD == 'false' && inputs.arm64 }}
-        env:
-          CI_ENV: ${{ inputs.environment }}
-        run: |
-          COMMAND=$(make --dry-run docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} NPM_TOKEN=${{ secrets.GLOBAL_PAT }})
-          COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
-          COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
-          echo "$COMMAND" && echo "$COMMAND" | bash
+          make ci-docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} NPM_TOKEN=${{ secrets.GLOBAL_PAT }}
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
           echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
