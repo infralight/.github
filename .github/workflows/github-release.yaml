@@ -8,7 +8,7 @@ on:
         default: main
         required: true
     secrets:
-      GITHUB_TOKEN:
+      RELEASE_GITHUB_TOKEN:
         required: true
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
             @semantic-release/git@10.0.0
             conventional-changelog-conventionalcommits@4.6.3
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           
       - name: Get release version
         id: get_version
