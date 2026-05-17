@@ -29,6 +29,7 @@ jobs:
         id: semantic
         with:
           semantic_version: 19.0.5
+          branches: ${{ inputs.branch }}
           extra_plugins: |
             @semantic-release/changelog@6.0.0
             @semantic-release/git@10.0.0
