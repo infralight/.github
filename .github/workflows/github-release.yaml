@@ -19,16 +19,16 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Setup Node 16
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
-        with:
-          node-version: 16
+      # - name: Setup Node 16
+      #   uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+      #   with:
+      #     node-version: 16
 
       - name: Release
-        uses: cycjimmy/semantic-release-action@cf5f706ea817a201939cff62126e3c08b84879c7 # v2
+        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6
         id: semantic
         with:
-          semantic_version: 18.0.0
+          semantic_version: 19.0.5
           extra_plugins: |
             @semantic-release/changelog@6.0.0
             @semantic-release/git@10.0.0
