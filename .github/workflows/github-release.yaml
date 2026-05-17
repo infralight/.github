@@ -19,10 +19,10 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      # - name: Setup Node 16
-      #   uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
-      #   with:
-      #     node-version: 16
+      - name: Setup Node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 24
 
       - name: Release
         uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6
