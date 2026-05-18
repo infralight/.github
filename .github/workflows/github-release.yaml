@@ -2,11 +2,6 @@ name: Reusable Release
 
 on:
   workflow_call:
-    inputs:
-      branch:
-        type: string
-        default: main
-        required: true
     secrets:
       RELEASE_GITHUB_TOKEN:
         required: true
