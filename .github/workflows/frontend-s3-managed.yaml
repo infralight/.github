@@ -119,10 +119,13 @@ jobs:
         run: |
           echo "K8S_API=https://k8s-api.prod.external.api.infralight.cloud" >> $GITHUB_ENV
 
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
       - name: Run Jest Tests
         if: inputs.run-tests
         run: |
-            npm test -- --watchAll=false --forceExit --maxWorkers="${JEST_MAX_WORKERS:-2}"
+          npm test -- --watchAll=false --forceExit --maxWorkers="${JEST_MAX_WORKERS:-2}"
 
       - name: Frontend Build (npm)
         env:
@@ -130,9 +133,7 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=8192"
           GENERATE_SOURCEMAP: ${{ inputs.environment == 'prod' && 'true' || 'false' }}
           REACT_APP_RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
-        run: |
-          npm ci --legacy-peer-deps
-          npm run build
+        run: npm run build
 
       - name: LogRocket Create Release and Upload Source Maps
         if: inputs.environment == 'prod'
