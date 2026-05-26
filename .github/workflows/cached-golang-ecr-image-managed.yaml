@@ -136,7 +136,7 @@ on:
 jobs:
   tests:
     name: Run Tests
-    runs-on: [self-hosted, arm64 ,'${{ inputs.environment }}']
+    runs-on: [infralight-runner-stag-arc-arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
