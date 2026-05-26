@@ -176,7 +176,7 @@ jobs:
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: 'ubuntu-24.04-amd'
+    runs-on: [infralight-runner-stag-arc-arm64]
     outputs:
       image-tag: ${{ steps.vars.outputs.image-tag }}
     env:
