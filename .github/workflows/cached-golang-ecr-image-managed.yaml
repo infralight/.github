@@ -191,8 +191,8 @@ jobs:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
       PRIVATE_ECR_REGISTRY: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com
-      app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
       IS_MULTI_ARCH_PROD: ${{ inputs.multi-arch && inputs.environment == 'prod' && 'true' || 'false' }}
+      app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
       cluster: ${{ inputs.cluster }}
     steps:
       - name: Checkout
