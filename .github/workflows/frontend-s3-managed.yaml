@@ -120,7 +120,7 @@ jobs:
           echo "K8S_API=https://k8s-api.prod.external.api.infralight.cloud" >> $GITHUB_ENV
 
       - name: Install Dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Run Jest Tests
         if: inputs.run-tests
