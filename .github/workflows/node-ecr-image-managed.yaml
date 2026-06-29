@@ -59,6 +59,16 @@ on:
       run:
         required: false
         type: string
+    outputs:
+      image-tag:
+        description: "The image tag used (SHA)"
+        value: ${{ jobs.build.outputs.tag }}
+      environment:
+        description: "The environment the image was built for"
+        value: ${{ jobs.build.outputs.environment }}
+      cluster:
+        description: "The cluster the image was built for"
+        value: ${{ jobs.build.outputs.cluster }}
     secrets:
       GLOBAL_PAT_USERNAME:
         required: true
@@ -93,10 +103,20 @@ jobs:
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
+      CLUSTER: ${{ inputs.cluster }}
     outputs:
       tag: ${{ steps.build.outputs.tag }}
+      environment: ${{ inputs.environment }}
+      cluster: ${{ steps.vars.outputs.cluster }}
     steps:
       - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+
+      - name: Set Outputs
+        id: vars
+        run: |
+          cluster=$(echo "${{ env.CLUSTER }}" | sed "s/^${{ inputs.environment }}-//") # strip environment prefix from cluster name if present
+          echo "cluster=${cluster}" >> "$GITHUB_OUTPUT"
+          echo "CLUSTER=${cluster}" >> "$GITHUB_ENV"
 
       - name: Configure Git for Private Modules
         if: ${{ env.HAVE_GLOBAL_PAT == 'true' }}
@@ -151,13 +171,13 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+          output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || env.CLUSTER }}-trivy-${{ inputs.app-name }}-results.json
 
       - name: Upload Trivy Scan Results to S3
         if: ${{ inputs.environment == 'dev' }}
         env:
-          TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
-          S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
+          TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || env.CLUSTER }}-trivy-${{ inputs.app-name }}-results.json
+          S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || env.CLUSTER }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
       - name: AWS ECR Login
