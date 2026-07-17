@@ -21,12 +21,15 @@ if [ "$IS_CACHE_MANAGER" == "true" ]; then
     fi
 fi
 
-# Override GO_VERSION from go.mod
+# Resolve GO_VERSION: the installed toolchain must satisfy both the app's
+# go.mod and the workflow's declared go-version (a go.work directive may be
+# newer than the app's go.mod, and GOTOOLCHAIN=local forbids auto-upgrades),
+# so take the higher of the two.
 go_version_extracted=$(extract_app_go_version "$APP_NAME" 2>/dev/null)
 if [ -z "$go_version_extracted" ]; then
     echo "Warning: failed to extract Go version. Falling back to GO_VERSION: $GO_VERSION" >&2
 else
-    GO_VERSION="$go_version_extracted"
+    GO_VERSION=$(printf '%s\n%s\n' "$GO_VERSION" "$go_version_extracted" | sort -V | tail -1)
 fi
 echo $GO_VERSION
 
