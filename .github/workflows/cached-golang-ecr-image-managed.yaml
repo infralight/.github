@@ -343,6 +343,26 @@ jobs:
           S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
+      # Gating dependency scan (INFL-20419): runs on releases that push to the
+      # PUBLIC ECR (public.ecr.aws/firefly) on prod, before the ECR login/push
+      # steps, and fails the build on CRITICAL/HIGH CVEs. Scoped to public-ECR
+      # prod so private-ECR consumers of this reusable workflow are unaffected.
+      # fs/dependency scan (not image): the multi-arch prod path builds+pushes
+      # via buildx in one step with no local image to scan, and this catches the
+      # Go-dependency CVE class (e.g. x/net CVE-2026-39821) shipped in binaries.
+      - name: Trivy dependency scan (gating)
+        if: ${{ inputs.ecr-public-registry != '' && inputs.environment == 'prod' }}
+        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # master (v0.69.2)
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          version: 'v0.69.2'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'library'
+          severity: 'CRITICAL,HIGH'
+
       - name: AWS ECR Login
         if: inputs.ecr-public-registry == '' || inputs.environment != 'prod'
         uses: aws-actions/amazon-ecr-login@c962da2960ed15f492addc26fffa274485265950 # v2
