@@ -176,8 +176,8 @@ jobs:
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    # prod stays on the legacy runner; dev/stag use the new ARC arm64 pool
-    runs-on: ${{ inputs.environment == 'prod' && 'ubuntu-24.04-amd' || fromJSON(format('["self-hosted", "arm64", "{0}"]', inputs.environment)) }}
+    # prod stays on the legacy runner; dev/stag use the new ARC amd pool
+    runs-on: ${{ inputs.environment == 'prod' && 'ubuntu-24.04-amd' || fromJSON(format('["self-hosted", "X64", "{0}"]', inputs.environment)) }}
     outputs:
       image-tag: ${{ steps.vars.outputs.image-tag }}
     env:
