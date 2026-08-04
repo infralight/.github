@@ -68,7 +68,7 @@ jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Frontend - Build & Deploy"
-    runs-on: [self-hosted, ARM64, frontend, "${{ inputs.environment }}"]
+    runs-on: [self-hosted, frontend, "${{ inputs.environment }}"]
     timeout-minutes: 30
     steps:
       - name: Git Checkout
