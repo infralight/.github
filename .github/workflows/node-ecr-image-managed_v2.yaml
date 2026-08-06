@@ -80,7 +80,7 @@ permissions:
 jobs:
   tests:
     if: inputs.run-tests == true
-    runs-on: [self-hosted, arm64 ,'${{ inputs.environment }}']
+    runs-on: 'ubuntu-24.04-arm'
     name: "Run Tests"
     steps:
       - run: |
@@ -89,7 +89,7 @@ jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Build & Push ECR Docker Image "
-    runs-on: [self-hosted, arm64 ,'${{ inputs.environment }}']
+    runs-on: 'ubuntu-24.04-arm'
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
@@ -113,6 +113,11 @@ jobs:
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
           echo "tag=${GITHUB_SHA::6}" >> $GITHUB_OUTPUT
 
+      - name: Setup QEMU
+        if: ${{ inputs.arm64 }}
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
+        with:
+          platforms: "arm64"
 
       - name: Build Docker Image [arm64]
         id: build-arm64
@@ -121,6 +126,8 @@ jobs:
           CI_ENV: ${{ inputs.environment }}
         run: |
           COMMAND=$(make --dry-run docker-build-${{ inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} NPM_TOKEN=${{ secrets.GLOBAL_PAT }})
+          COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+buildx\s+build/docker buildx build \-\-platform\=linux\/arm64/ig')
+          COMMAND=$(echo "$COMMAND" | sed -E 's/docker\s+build\s/docker build \-\-platform\=linux\/arm64 /ig')
           echo "$COMMAND" && echo "$COMMAND" | bash
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:latest
           docker tag docker.io/library/tempimage ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com/${{ inputs.app-name }}:${GITHUB_SHA::6}
