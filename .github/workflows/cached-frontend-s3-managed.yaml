@@ -58,8 +58,8 @@ jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Frontend - Build & Deploy"
-    # runs-on: [self-hosted, frontend, "${{ inputs.environment }}"]
-    runs-on: ubuntu-latest
+    # prod stays on the GitHub-hosted runner; dev/stag build on the self-hosted frontend pool
+    runs-on: ${{ inputs.environment == 'prod' && 'ubuntu-latest' || fromJSON(format('["self-hosted", "frontend", "{0}"]', inputs.environment)) }}
     env:
       AWS_REGION: ${{ inputs.aws-region }}
     steps:
