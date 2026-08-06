@@ -176,7 +176,8 @@ jobs:
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: 'ubuntu-24.04-amd'
+    # prod stays on the legacy runner; dev/stag build natively on the new ARC arm64 pool
+    runs-on: ${{ inputs.environment == 'prod' && 'ubuntu-24.04-amd' || fromJSON(format('["self-hosted", "arm64", "{0}"]', inputs.environment)) }}
     outputs:
       image-tag: ${{ steps.vars.outputs.image-tag }}
     env:
@@ -294,6 +295,13 @@ jobs:
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
         with:
           platforms: "arm64"
+
+      - name: Set up Docker Buildx
+        if: ${{ inputs.arm64 }}
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        with:
+          # docker driver stores the built image in the engine so the later tag/push step can find it
+          driver: docker
 
       - name: Go Build (ARM64)
         if: ${{ inputs.arm64 }}
