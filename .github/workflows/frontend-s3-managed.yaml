@@ -158,7 +158,11 @@ jobs:
       - name: Install AWS Cli
         if: ${{ !contains(runner.name, 'GitHub Actions') }}
         run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+          case "$(uname -m)" in
+            aarch64|arm64) ARCH=aarch64 ;;
+            *)             ARCH=x86_64 ;;
+          esac
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-$ARCH.zip" -o /tmp/awscliv2.zip
           unzip -q /tmp/awscliv2.zip -d /tmp
           rm /tmp/awscliv2.zip
           sudo /tmp/aws/install --update
