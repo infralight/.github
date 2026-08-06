@@ -58,7 +58,6 @@ jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Frontend - Build & Deploy"
-    # prod stays on the GitHub-hosted runner; dev/stag build on the self-hosted frontend pool
     runs-on: ${{ inputs.environment == 'prod' && 'ubuntu-latest' || fromJSON(format('["self-hosted", "frontend", "{0}"]', inputs.environment)) }}
     env:
       AWS_REGION: ${{ inputs.aws-region }}
@@ -93,7 +92,11 @@ jobs:
 
       - name: Install AWS Cli
         run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+          case "$(uname -m)" in
+            aarch64|arm64) ARCH=aarch64 ;;
+            *)             ARCH=x86_64 ;;
+          esac
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-$ARCH.zip" -o /tmp/awscliv2.zip
           unzip -q /tmp/awscliv2.zip -d /tmp
           rm /tmp/awscliv2.zip
           sudo /tmp/aws/install --update
