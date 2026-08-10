@@ -296,13 +296,6 @@ jobs:
         with:
           platforms: "arm64"
 
-      - name: Set up Docker Buildx
-        if: ${{ inputs.arm64 }}
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
-        with:
-          # docker driver stores the built image in the engine so the later tag/push step can find it
-          driver: docker
-
       - name: Go Build (ARM64)
         if: ${{ inputs.arm64 }}
         env:
