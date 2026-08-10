@@ -80,7 +80,8 @@ permissions:
 jobs:
   tests:
     if: inputs.run-tests == true
-    runs-on: [self-hosted, arm64, '${{ inputs.environment }}']
+    # 'product' environment maps to the 'prod' runner label
+    runs-on: ${{ inputs.environment == 'product' && fromJSON('["self-hosted", "arm64", "prod"]') || fromJSON(format('["self-hosted", "arm64", "{0}"]', inputs.environment)) }}
     name: "Run Tests"
     steps:
       - run: |
@@ -89,7 +90,8 @@ jobs:
   build:
     environment: ${{ inputs.environment }}
     name: "Build & Push ECR Docker Image "
-    runs-on: [self-hosted, arm64, '${{ inputs.environment }}']
+    # 'product' environment maps to the 'prod' runner label
+    runs-on: ${{ inputs.environment == 'product' && fromJSON('["self-hosted", "arm64", "prod"]') || fromJSON(format('["self-hosted", "arm64", "{0}"]', inputs.environment)) }}
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
