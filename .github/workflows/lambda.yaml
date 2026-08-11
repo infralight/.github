@@ -49,7 +49,7 @@ jobs:
   lambda:
     environment: ${{ inputs.environment }}
     name: "[Lambda]"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, arm64, '${{ inputs.environment }}']
     steps:
       - name: Configure AWS Credentials
         id: aws-creds
