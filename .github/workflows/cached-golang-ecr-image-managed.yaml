@@ -119,6 +119,9 @@ on:
       image-tag:
         description: "The image tag used (SHA or semver)"
         value: ${{ jobs.build-push-ecr.outputs.image-tag }}
+      image-digest:
+        description: "The authoritative private ECR image digest"
+        value: ${{ jobs.build-push-ecr.outputs.image-digest }}
     secrets:
       GLOBAL_PAT_USERNAME:
         required: true
@@ -181,6 +184,7 @@ jobs:
     runs-on: ${{ inputs.environment == 'product' && fromJSON('["self-hosted", "arm64", "prod"]') || fromJSON(format('["self-hosted", "arm64", "{0}"]', inputs.environment)) }}
     outputs:
       image-tag: ${{ steps.vars.outputs.image-tag }}
+      image-digest: ${{ steps.image-digest.outputs.image-digest }}
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
@@ -382,3 +386,21 @@ jobs:
       - name: "[Build]: build image & upload to ECR - CUSTOM"
         if: ${{ env.HAVE_RUN_CMD == 'true' }}
         run: ${{ inputs.run }}
+
+      - name: Resolve private ECR image digest
+        id: image-digest
+        if: inputs.ecr-public-registry == '' || inputs.environment != 'prod'
+        env:
+          ECR_REPOSITORY: ${{ format('{0}{1}', inputs.ecr-prefix, env.ECR_NAME) }}
+          IMAGE_TAG: ${{ steps.vars.outputs.image-tag }}
+        run: |
+          image_digest="$(aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids "imageTag=$IMAGE_TAG" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)"
+          if [[ ! "$image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Invalid image digest returned for $ECR_REPOSITORY:$IMAGE_TAG" >&2
+            exit 1
+          fi
+          echo "image-digest=$image_digest" >> "$GITHUB_OUTPUT"
