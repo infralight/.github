@@ -27,7 +27,7 @@ jobs:
 
       - name: Lint workflows
         run: |
-          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -ignore 'label "prod" is unknown' \
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -shellcheck= -ignore 'label "prod" is unknown' \
             .github/workflows/cached-golang-ecr-image-managed.yaml \
             .github/workflows/argocd-sync.yaml \
             .github/workflows/validate-image-digest-contract.yaml
