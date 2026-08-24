@@ -66,7 +66,7 @@ jobs:
     runs-on: [self-hosted, "prod", "arm64"]
     steps:
       - id: string
-        uses: ASzc/change-string-case-action@d0603cd0a7dd490be678164909f65c7737470a7f # v6
+        uses: ASzc/change-string-case-action@624e17dfe730fc822c8171f67ccb134425b4b8ce # v7
         with:
           string: ${{ inputs.fetcherName }}
       - name: "[ArgoCD]: set variables"
@@ -85,7 +85,7 @@ jobs:
             echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
           fi
       - name: Clone helm-values repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: infralight/helm-values
           path: tmp/helm-values
@@ -117,21 +117,21 @@ jobs:
         if: ${{ inputs.fetcherName != 'iacathon-crawler' }}
         run: |
           yq -i '${{ inputs.fetcherName != '' && format('.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || inputs.imageTagPath }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
-      - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
+      - uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321 # v10.0.0
         with:
           cwd: 'tmp/helm-values'
           message: ${{ env.APP_NAME }} image updated to ${{ env.TAG }}'
           pull: '--rebase --autostash'
           push: 'origin --force'
       - name: "[ArgoCD]: trigger sync"
-        uses: clowdhaus/argo-cd-action/@f26660fba71360cd8bff27f49b9666f6ea701197 # v2.3.0
+        uses: clowdhaus/argo-cd-action/@946f488cf2607049c2e6ca86902ac50783927ec1 # v4.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
           command: app sync "${{ env.ARGO_APP_NAME }}"
           options: --retry-limit 3 --retry-backoff-duration 20s
       - name: "[ArgoCD]: wait for deploy to complete"
-        uses: clowdhaus/argo-cd-action/@f26660fba71360cd8bff27f49b9666f6ea701197 # v2.3.0
+        uses: clowdhaus/argo-cd-action/@946f488cf2607049c2e6ca86902ac50783927ec1 # v4.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
