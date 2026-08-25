@@ -135,8 +135,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
-  actions: write
 
 jobs:
   tests:
@@ -183,6 +181,10 @@ jobs:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
 
   build-push-ecr:
+    permissions:
+      contents: read
+      id-token: write
+      actions: write
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
     # 'product' environment maps to the 'prod' runner label

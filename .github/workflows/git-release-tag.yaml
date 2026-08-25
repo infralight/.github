@@ -9,10 +9,12 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   tests:
+    permissions:
+      contents: write
     name: Tag Release
     runs-on: ubuntu-latest
     steps:

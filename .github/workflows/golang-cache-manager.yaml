@@ -26,7 +26,6 @@ env:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   build-tests-cache:
@@ -87,6 +86,9 @@ jobs:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
 
   build-app-cache:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
