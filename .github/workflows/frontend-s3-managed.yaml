@@ -59,6 +59,8 @@ on:
         required: false
       CI_LOGROCKET_API_KEY:
         required: false
+      CI_SENTRY_DSN:
+        required: false
 
 permissions:
   id-token: write
@@ -92,6 +94,7 @@ jobs:
           GITHUB_APP_LINK: ${{ vars.CI_GITHUB_APP_LINK }}
           GROWTHBOOK_CLIENT_ID: ${{ secrets.CI_GROWTHBOOK_CLIENT_ID }}
           GROWTHBOOK_DECRYPTION_KEY: ${{ secrets.CI_GROWTHBOOK_DECRYPTION_KEY }}
+          SENTRY_DSN: ${{ secrets.CI_SENTRY_DSN }}
 
       - name: "Setup Node ${{ inputs.node-version }}"
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
