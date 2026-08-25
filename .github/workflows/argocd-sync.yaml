@@ -82,7 +82,6 @@ jobs:
           echo "FETCHER_NAME=${{ steps.string.outputs.uppercase }}" >> $GITHUB_ENV
           echo 'ARGOCD_OPTS="--grpc-web"' >> $GITHUB_ENV
           echo "TAG=${{ inputs.tag != '' && inputs.tag || '${GITHUB_SHA::6}' }}" >> $GITHUB_ENV
-          echo "GITHUB_TOKEN=${{ secrets.CI_GITHUB_TOKEN }}" >> $GITHUB_ENV
           echo "SLACK_ICON=https://cncf-branding.netlify.app/img/projects/argo/icon/color/argo-icon-color.png"
           if [[ "${{ inputs.environment }}" == "dev" ]]; then
             echo "SLACK_ICON=https://firefly-app-assets.s3.us-east-1.amazonaws.com/logo/serenity.png"
