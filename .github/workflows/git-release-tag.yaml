@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: Bump version and push tag
-        if: github.ref == 'refs/heads/${{ inputs.branch }}' && github.event_name == 'push'
+        if: github.ref == format('refs/heads/{0}', inputs.branch) && github.event_name == 'push'
         uses: mathieudutour/github-tag-action@a22cf08638b34d5badda920f9daf6e72c477b07b # v6.2
         with:
           release_branches: ${{ inputs.branch }}

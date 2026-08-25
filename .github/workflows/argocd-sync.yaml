@@ -131,6 +131,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
+          version: 2.13.3
           command: app sync "${{ env.ARGO_APP_NAME }}"
           options: --retry-limit 3 --retry-backoff-duration 20s
       - name: "[ArgoCD]: wait for deploy to complete"
@@ -138,6 +139,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
         with:
+          version: 2.13.3
           command: app wait ${{ env.ARGO_APP_NAME }} --timeout ${{ inputs.timeout }}
       - name: "Notify Slack of deployment status"
         if: ${{ inputs.slack }}
