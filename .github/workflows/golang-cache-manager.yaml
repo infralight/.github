@@ -26,6 +26,7 @@ env:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   build-tests-cache:
