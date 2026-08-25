@@ -122,6 +122,7 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
         with:
           platforms: "arm64"
+          cache-image: false
 
       - name: Build Docker Image [arm64]
         id: build-arm64

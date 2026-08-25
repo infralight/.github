@@ -73,6 +73,7 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
         with:
           platforms: "arm64"
+          cache-image: false
 
       - name: Go Run Tests
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
@@ -144,6 +145,7 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
         with:
           platforms: "arm64"
+          cache-image: false
 
       - name: Go Build All Apps (MONO_REPO)
         if: inputs.app-name == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
