@@ -14,5 +14,5 @@ outputs:
   version:
     description: "VERSION component of full tag"
 runs:
-  using: "node20"
+  using: "node24"
   main: "dist/index.js"

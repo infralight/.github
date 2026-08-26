@@ -24,13 +24,17 @@ env:
   architecture: 'arm64'
   cache-runner-key: 'linux-arm64'
 
+permissions:
+  contents: read
+
 jobs:
   build-tests-cache:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           ref: ${{ inputs.branch || 'main' }}
 
       - name: Configure Git for Private Modules
@@ -49,7 +53,7 @@ jobs:
       - name: Go Cache Restore
         if: steps.cache.outputs.is-invoker == 'no'
         id: go-cache-restore
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: |
             ${{ steps.cache.outputs.go-build }}
@@ -57,16 +61,18 @@ jobs:
           key: ${{ steps.cache.outputs.cache-key }}
 
       - name: Setup Go
-        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
         with:
+          cache: false
           go-version: ${{ steps.cache.outputs.go-version }}
 
       - name: Setup QEMU
         if: steps.cache.outputs.is-invoker == 'no'
-        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
         with:
           platforms: "arm64"
+          cache-image: false
 
       - name: Go Run Tests
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
@@ -80,11 +86,15 @@ jobs:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
 
   build-app-cache:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           ref: ${{ inputs.branch || 'main' }}
 
       - name: Configure Git for Private Modules
@@ -103,7 +113,7 @@ jobs:
       - name: Go Cache Restore
         if: steps.cache.outputs.is-invoker == 'no'
         id: go-cache-restore
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: |
             ${{ steps.cache.outputs.go-build }}
@@ -127,15 +137,17 @@ jobs:
 
       - name: Setup Go
         if: steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'
-        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
+          cache: false
           go-version: ${{ steps.cache.outputs.go-version }}
 
       - name: Setup QEMU
         if: steps.cache.outputs.is-invoker == 'no'
-        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
         with:
           platforms: "arm64"
+          cache-image: false
 
       - name: Go Build All Apps (MONO_REPO)
         if: inputs.app-name == '*' && steps.go-cache-restore.outputs.cache-hit != 'true' && steps.cache.outputs.is-invoker == 'no'

@@ -68,7 +68,7 @@ jobs:
     permissions:
       contents: write # Required for permission to push tags
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: infralight/.github/.github/actions/bump-monorepo-version-tag@master
         with:
           component-path: 'path/to/microservice/'

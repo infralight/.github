@@ -6,6 +6,9 @@ on:
       RELEASE_GITHUB_TOKEN:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   release:
     name: Release

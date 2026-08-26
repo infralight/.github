@@ -133,6 +133,9 @@ on:
       CI_ACCOUNT_ID:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   tests:
     name: Run Tests
@@ -140,7 +143,9 @@ jobs:
     runs-on: ${{ inputs.environment == 'product' && fromJSON('["self-hosted", "arm64", "prod"]') || fromJSON(format('["self-hosted", "arm64", "{0}"]', inputs.environment)) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Go Cache Preflights
         id: cache
@@ -153,7 +158,7 @@ jobs:
 
       - name: Go Cache Restore
         id: go-cache-restore
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: |
             ${{ steps.cache.outputs.go-build }}
@@ -163,8 +168,9 @@ jobs:
             ${{ steps.cache.outputs.cache-key-any }}
             ${{ steps.cache.outputs.cache-key-any2 }}
 
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v2
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
+          cache: false
           go-version: ${{ steps.cache.outputs.go-version }}
 
       - name: Configure Git for Private Modules
@@ -175,6 +181,10 @@ jobs:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
 
   build-push-ecr:
+    permissions:
+      contents: read
+      id-token: write
+      actions: write
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
     # 'product' environment maps to the 'prod' runner label
@@ -190,8 +200,9 @@ jobs:
       IS_MULTI_ARCH_PROD: ${{ inputs.multi-arch && inputs.environment == 'prod' && 'true' || 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           ref: ${{ inputs.branch }}
           fetch-depth: ${{ inputs.semver && '0' || '1' }}
 
@@ -210,7 +221,7 @@ jobs:
 
       - name: Go Cache Restore
         id: go-cache-restore
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: |
             ${{ steps.cache.outputs.go-build }}
@@ -221,8 +232,9 @@ jobs:
             ${{ steps.cache.outputs.cache-key-any2 }}
 
       - name: Setup Go
-        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v2
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
+          cache: false
           go-version: ${{ steps.cache.outputs.go-version }}
 
       - name: Go Cache Build
@@ -257,7 +269,7 @@ jobs:
           fi
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         env:
           environment: ${{ startsWith(inputs.environment, 'env') && 'dev' || inputs.environment }}
         with:
@@ -293,9 +305,10 @@ jobs:
 
       - name: Set up QEMU
         if: ${{ inputs.arm64 }}
-        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
         with:
           platforms: "arm64"
+          cache-image: false
 
       - name: Go Build (ARM64)
         if: ${{ inputs.arm64 }}
@@ -325,7 +338,7 @@ jobs:
 
       - name: Run Trivy Vulnerability Scanner
         if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
-        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # master (v0.69.2)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: docker.io/library/tempimage
           version: 'v0.69.2'
