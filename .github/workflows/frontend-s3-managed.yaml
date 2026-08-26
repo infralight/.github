@@ -98,7 +98,7 @@ jobs:
           GROWTHBOOK_CLIENT_ID: ${{ secrets.CI_GROWTHBOOK_CLIENT_ID }}
           GROWTHBOOK_DECRYPTION_KEY: ${{ secrets.CI_GROWTHBOOK_DECRYPTION_KEY }}
           SENTRY_DSN: ${{ secrets.CI_SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.CI_SENTRY_AUTH_TOKEN }}
 
       - name: "Setup Node ${{ inputs.node-version }}"
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
