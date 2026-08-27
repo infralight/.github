@@ -117,12 +117,13 @@ jobs:
         if: ${{ inputs.fetcherName != 'iacathon-crawler' }}
         run: |
           yq -i '${{ inputs.fetcherName != '' && format('.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || inputs.imageTagPath }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
-      - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
+      - uses: EndBug/add-and-commit@cc9c08ba6c8df3b93a8f2db63e89b98368ae2ae8 # v11.1.1
         with:
           cwd: 'tmp/helm-values'
-          message: ${{ env.APP_NAME }} image updated to ${{ env.TAG }}'
+          message: ${{ env.APP_NAME }} image updated to ${{ env.TAG }}
           pull: '--rebase --autostash'
-          push: 'origin --force'
+          push: true
+          push_attempts: '10'
       - name: "[ArgoCD]: trigger sync"
         uses: clowdhaus/argo-cd-action/@f26660fba71360cd8bff27f49b9666f6ea701197 # v2.3.0
         env:
