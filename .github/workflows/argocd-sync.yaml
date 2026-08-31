@@ -125,14 +125,9 @@ jobs:
         run: |
           set -euo pipefail
           cd tmp/helm-values
-          git config user.name "cicdBot"
-          git config user.email "cicd@firefly.ai"
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
-          # Apply the tag to the newest version of the file on every attempt.
-          # Deliberately no rebase: a rebase of two jobs that touched the same
-          # values file conflicts and strands the runner mid-rebase. Resetting
-          # and re-running yq cannot conflict, and because yq only assigns our
-          # one key, anything another job wrote to this file is preserved.
           ATTEMPTS=10
           for attempt in $(seq 1 "${ATTEMPTS}"); do
             git fetch --quiet origin main
