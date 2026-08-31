@@ -111,19 +111,54 @@ jobs:
         id: iacathon
         if: ${{ inputs.fetcherName == 'iacathon-crawler' }}
         run: |
-          yq -i '.tagsOverride.IACATHON_CONTAINER_IMAGE = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/iacathon-crawler:{2}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+          echo "YQ_PATH=.tagsOverride.IACATHON_CONTAINER_IMAGE" >> $GITHUB_ENV
+          echo "YQ_VALUE=${{ format('{0}.dkr.ecr.{1}.amazonaws.com/iacathon-crawler:{2}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, env.TAG) }}" >> $GITHUB_ENV
       - name: "UPDATE IMAGE TAG"
         id: fetcher
         if: ${{ inputs.fetcherName != 'iacathon-crawler' }}
         run: |
-          yq -i '${{ inputs.fetcherName != '' && format('.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || inputs.imageTagPath }} = "${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}"' tmp/helm-values/${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
-      - uses: EndBug/add-and-commit@cc9c08ba6c8df3b93a8f2db63e89b98368ae2ae8 # v11.1.1
-        with:
-          cwd: 'tmp/helm-values'
-          message: ${{ env.APP_NAME }} image updated to ${{ env.TAG }}
-          pull: '--rebase --autostash'
-          push: true
-          push_attempts: '10'
+          echo "YQ_PATH=${{ inputs.fetcherName != '' && format('.tagsOverride.FETCHER_{0}_IMAGE', env.FETCHER_NAME) || inputs.imageTagPath }}" >> $GITHUB_ENV
+          echo "YQ_VALUE=${{ inputs.fetcherName != '' && format('{0}.dkr.ecr.{1}.amazonaws.com/flywheel-{2}-consumer:{3}', secrets.CI_ACCOUNT_ID, secrets.CI_REGION, inputs.fetcherName, env.TAG) || env.TAG }}" >> $GITHUB_ENV
+      - name: "Commit and push image tag"
+        env:
+          VALUES_FILE: ${{ inputs.environment }}/${{ inputs.cluster }}/${{ inputs.appName }}${{ inputs.appNameSuffix }}.yaml
+        run: |
+          set -euo pipefail
+          cd tmp/helm-values
+          git config user.name "cicdBot"
+          git config user.email "cicd@firefly.ai"
+
+          # Apply the tag to the newest version of the file on every attempt.
+          # Deliberately no rebase: a rebase of two jobs that touched the same
+          # values file conflicts and strands the runner mid-rebase. Resetting
+          # and re-running yq cannot conflict, and because yq only assigns our
+          # one key, anything another job wrote to this file is preserved.
+          ATTEMPTS=10
+          for attempt in $(seq 1 "${ATTEMPTS}"); do
+            git fetch --quiet origin main
+            git reset --quiet --hard FETCH_HEAD
+
+            yq -i "${YQ_PATH} = strenv(YQ_VALUE)" "${VALUES_FILE}"
+
+            if git diff --quiet -- "${VALUES_FILE}"; then
+              echo "${VALUES_FILE} is already at ${TAG}, nothing to commit."
+              exit 0
+            fi
+
+            git add "${VALUES_FILE}"
+            git commit -q -m "${APP_NAME} image updated to ${TAG}"
+
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt ${attempt}."
+              exit 0
+            fi
+
+            echo "Push rejected on attempt ${attempt}, another job got there first. Retrying."
+            sleep $(( (RANDOM % 5) + attempt ))
+          done
+
+          echo "Could not push ${VALUES_FILE} after ${ATTEMPTS} attempts." >&2
+          exit 1
       - name: "[ArgoCD]: trigger sync"
         uses: clowdhaus/argo-cd-action/@f26660fba71360cd8bff27f49b9666f6ea701197 # v2.3.0
         env:
