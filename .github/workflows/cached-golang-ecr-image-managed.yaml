@@ -349,15 +349,6 @@ jobs:
           S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
-      # Prod release gate (INFL-20419). The dev scan above is report-only and
-      # never runs on the prod path, so images published to public ECR ship
-      # unscanned. Opt-in per app via trivy-gate-prod so existing CIs are
-      # unaffected.
-      #
-      # On multi-arch prod the image is built and pushed in one buildx step, so
-      # no local image exists yet to scan. Build the host-arch image locally
-      # purely for scanning; the arch-suffixed binaries already exist from the
-      # Go Build steps and layers are cached, so this is a cheap rebuild.
       - name: Docker Build for Trivy Gate (Multi-Arch Prod)
         if: ${{ inputs.trivy-scan && inputs.trivy-gate-prod && inputs.environment == 'prod' && env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false' }}
         run: |
