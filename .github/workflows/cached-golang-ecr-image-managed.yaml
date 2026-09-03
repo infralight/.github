@@ -59,6 +59,10 @@ on:
         type: boolean
         required: false
         default: true
+      trivy-gate-prod:
+        type: boolean
+        required: false
+        default: false
       gitleaks:
         type: boolean
         required: false
@@ -344,6 +348,23 @@ jobs:
           TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
           S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
+
+      - name: Docker Build for Trivy Gate (Multi-Arch Prod)
+        if: ${{ inputs.trivy-scan && inputs.trivy-gate-prod && inputs.environment == 'prod' && env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false' }}
+        run: |
+          make ci-docker-build-${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }} ACCESS_TOKEN_USR=${{ secrets.GLOBAL_PAT_USERNAME }} ACCESS_TOKEN_PWD=${{ secrets.GLOBAL_PAT }} GITLEAKS_FILE_PATH=s3://${{ format('firefly-{0}-gitleaks-configuration/gitleaks.toml', env.CLUSTER_NAME) }}
+
+      - name: Run Trivy Vulnerability Scanner (Prod Gate)
+        if: ${{ inputs.trivy-scan && inputs.trivy-gate-prod && inputs.environment == 'prod' && env.HAVE_RUN_CMD == 'false' }}
+        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # master (v0.69.2)
+        with:
+          image-ref: docker.io/library/tempimage
+          version: 'v0.69.2'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
 
       - name: AWS ECR Login
         if: inputs.ecr-public-registry == '' || inputs.environment != 'prod'
