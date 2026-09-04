@@ -349,6 +349,17 @@ jobs:
           S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
+      - name: Trivy Report
+        if: ${{ inputs.environment == 'dev' && inputs.trivy-scan && inputs.trivy-gate-prod }}
+        env:
+          TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+        run: |
+          if [ ! -f "./$TRIVY_RESULT" ]; then
+            echo "no Trivy report at ./$TRIVY_RESULT - nothing to render"
+            exit 0
+          fi
+          trivy convert --format table --severity CRITICAL,HIGH "./$TRIVY_RESULT" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Docker Build for Trivy Gate (Multi-Arch Prod)
         if: ${{ inputs.trivy-scan && inputs.trivy-gate-prod && contains(fromJSON('["prod", "prod-eu"]'), inputs.environment) && env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false' }}
         run: |
