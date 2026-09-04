@@ -349,8 +349,8 @@ jobs:
           S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
-      - name: Render Trivy findings as a table
-        if: ${{ inputs.trivy-scan && inputs.environment == 'dev' }}
+      - name: Trivy Report
+        if: ${{ inputs.environment == 'dev' && inputs.trivy-scan && inputs.trivy-gate-prod }}
         env:
           TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
         run: |
