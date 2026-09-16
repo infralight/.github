@@ -11,7 +11,7 @@ on:
 jobs:
   tests:
     name: Tag Release
-    runs-on: infralight-runner-dev-arc-amd
+    runs-on: ${{ github.repository_owner == 'infralight' && github.event.repository.private && 'infralight-runner-dev-arc-amd' || 'ubuntu-latest' }}
     steps:
       - name: Check out source code
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
