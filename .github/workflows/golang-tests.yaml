@@ -25,7 +25,7 @@ jobs:
     name: Run Basic Tests
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'infralight' && github.event.repository.private && 'infralight-runner-dev-arc-amd' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
       - name: Configure git for private modules
@@ -43,7 +43,7 @@ jobs:
   custom-tests:
     if: inputs.custom == true
     name: Run Custom Tests
-    runs-on: 'ubuntu-latest'
+    runs-on: ${{ github.repository_owner == 'infralight' && github.event.repository.private && 'infralight-runner-dev-arc-amd' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - name: Configure git for private modules
