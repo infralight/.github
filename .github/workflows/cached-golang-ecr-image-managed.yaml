@@ -136,7 +136,7 @@ on:
 jobs:
   tests:
     name: Run Tests
-    runs-on: ubuntu-24.04-amd
+    runs-on: ${{ github.repository_owner == 'infralight' && github.event.repository.private && 'infralight-runner-dev-arc-amd' || 'ubuntu-24.04-amd' }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -176,7 +176,7 @@ jobs:
   build-push-ecr:
     name: "Build & Push ECR Docker Image "
     environment: ${{ inputs.environment }}
-    runs-on: 'ubuntu-24.04-amd'
+    runs-on: ${{ github.repository_owner == 'infralight' && github.event.repository.private && 'infralight-runner-dev-arc-amd' || 'ubuntu-24.04-amd' }}
     outputs:
       image-tag: ${{ steps.vars.outputs.image-tag }}
     env:
