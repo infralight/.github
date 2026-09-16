@@ -49,7 +49,7 @@ jobs:
   lambda:
     environment: ${{ inputs.environment }}
     name: "[Lambda]"
-    runs-on: infralight-runner-dev-arc-amd
+    runs-on: ${{ github.repository_owner == 'infralight' && github.event.repository.private && 'infralight-runner-dev-arc-amd' || 'ubuntu-latest' }}
     steps:
       - name: Configure AWS Credentials
         id: aws-creds
