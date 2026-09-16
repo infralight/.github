@@ -26,7 +26,7 @@ env:
 
 jobs:
   build-tests-cache:
-    runs-on: infralight-runner-dev-arc-amd
+    runs-on: ${{ github.repository_owner == 'infralight' && github.event.repository.private && 'infralight-runner-dev-arc-amd' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -80,7 +80,7 @@ jobs:
           GOPRIVATE: "github.com/infralight/*,github.com/gofireflyio/*"
 
   build-app-cache:
-    runs-on: infralight-runner-dev-arc-amd
+    runs-on: ${{ github.repository_owner == 'infralight' && github.event.repository.private && 'infralight-runner-dev-arc-amd' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
