@@ -81,7 +81,7 @@ jobs:
   tests:
     if: inputs.run-tests == true
     # 'product' environment maps to the 'prod' runner label
-    runs-on: ${{ inputs.environment == 'product' && fromJSON('["self-hosted", "arm64", "prod"]') || fromJSON(format('["self-hosted", "arm64", "{0}"]', inputs.environment)) }}
+    runs-on: infralight-runner-prod-arc-arm64
     name: "Run Tests"
     steps:
       - run: |
@@ -91,7 +91,7 @@ jobs:
     environment: ${{ inputs.environment }}
     name: "Build & Push ECR Docker Image "
     # 'product' environment maps to the 'prod' runner label
-    runs-on: ${{ inputs.environment == 'product' && fromJSON('["self-hosted", "arm64", "prod"]') || fromJSON(format('["self-hosted", "arm64", "{0}"]', inputs.environment)) }}
+    runs-on: infralight-runner-prod-arc-arm64
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
