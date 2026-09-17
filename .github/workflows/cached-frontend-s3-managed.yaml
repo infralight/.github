@@ -59,7 +59,7 @@ jobs:
     environment: ${{ inputs.environment }}
     name: "Frontend - Build & Deploy"
     # 'product' environment maps to the 'prod' runner label
-    runs-on: ${{ inputs.environment == 'product' && fromJSON('["self-hosted", "frontend", "prod"]') || fromJSON(format('["self-hosted", "frontend", "{0}"]', inputs.environment)) }}
+    runs-on: infralight-runner-prod-arc-arm64
     env:
       AWS_REGION: ${{ inputs.aws-region }}
     steps:
