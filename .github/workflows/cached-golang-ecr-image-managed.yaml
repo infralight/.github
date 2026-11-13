@@ -294,6 +294,10 @@ jobs:
         with:
           platforms: "amd64"
 
+      - name: Set up Docker Buildx (AMD64)
+        if: ${{ !inputs.arm64 && env.IS_MULTI_ARCH_PROD == 'false' && env.HAVE_RUN_CMD == 'false' }}
+        uses: docker/setup-buildx-action@v3
+
       - name: Docker Build (AMD64)
         if: ${{ !inputs.arm64 && env.IS_MULTI_ARCH_PROD == 'false' && env.HAVE_RUN_CMD == 'false' }}
         run: |
