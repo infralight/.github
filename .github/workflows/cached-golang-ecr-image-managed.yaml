@@ -288,6 +288,12 @@ jobs:
             mv ${{ inputs.app-name }} ${{ inputs.app-name }}_amd64
           fi
 
+      - name: Set up QEMU (AMD64)
+        if: ${{ !inputs.arm64 && env.IS_MULTI_ARCH_PROD == 'false' && env.HAVE_RUN_CMD == 'false' }}
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
+        with:
+          platforms: "amd64"
+
       - name: Docker Build (AMD64)
         if: ${{ !inputs.arm64 && env.IS_MULTI_ARCH_PROD == 'false' && env.HAVE_RUN_CMD == 'false' }}
         run: |
