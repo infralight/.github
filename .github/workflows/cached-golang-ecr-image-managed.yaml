@@ -94,7 +94,7 @@ on:
         required: false
       cluster:
         type: string
-        default: 'env1'
+        default: 'env2'
         required: false
       latest:
         type: boolean
