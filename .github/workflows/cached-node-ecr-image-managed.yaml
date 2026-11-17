@@ -165,13 +165,13 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+          output: ${{ contains(fromJSON('["prod"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
 
       - name: Upload Trivy Scan Results to S3
         if: ${{ inputs.environment == 'dev' }}
         env:
-          TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
-          S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
+          TRIVY_RESULT: ${{ contains(fromJSON('["prod"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+          S3_BUCKET: firefly-${{ contains(fromJSON('["prod"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
       - name: AWS ECR Login

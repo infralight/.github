@@ -188,7 +188,7 @@ jobs:
     env:
       HAVE_GLOBAL_PAT: ${{ secrets.GLOBAL_PAT != '' }}
       HAVE_RUN_CMD: ${{ inputs.run != '' }}
-      CLUSTER_NAME: ${{ inputs.environment == 'stag' && 'stgeu' || inputs.environment == 'dev' && inputs.cluster || inputs.environment }}
+      CLUSTER_NAME: ${{ inputs.environment == 'dev' && inputs.cluster || inputs.environment }}
       PRIVATE_ECR_REGISTRY: ${{ secrets.CI_ACCOUNT_ID }}.dkr.ecr.${{ secrets.CI_REGION }}.amazonaws.com
       app-name: ${{ inputs.fetcher-name != '' && inputs.fetcher-name || inputs.app-name }}
       IS_MULTI_ARCH_PROD: ${{ inputs.multi-arch && inputs.environment == 'prod' && 'true' || 'false' }}
@@ -338,21 +338,21 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+          output: ${{ inputs.environment == 'prod' && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
         # env:
         #   TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:latest
 
       - name: Upload Trivy Scan Results to S3
         if: ${{ inputs.environment == 'dev' }}
         env:
-          TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
-          S3_BUCKET: firefly-${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-scans
+          TRIVY_RESULT: ${{ inputs.environment == 'prod' && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+          S3_BUCKET: firefly-${{ inputs.environment == 'prod' && inputs.environment || inputs.cluster }}-trivy-scans
         run: aws s3 cp "./$TRIVY_RESULT" "s3://$S3_BUCKET/$TRIVY_RESULT"
 
       - name: Trivy Report
         if: ${{ inputs.environment == 'dev' && inputs.trivy-scan && inputs.trivy-gate-prod }}
         env:
-          TRIVY_RESULT: ${{ contains(fromJSON('["prod", "stag"]'), inputs.environment) && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+          TRIVY_RESULT: ${{ inputs.environment == 'prod' && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
         run: |
           if [ ! -f "./$TRIVY_RESULT" ]; then
             echo "no Trivy report at ./$TRIVY_RESULT - nothing to render"
