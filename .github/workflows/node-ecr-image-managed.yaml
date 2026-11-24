@@ -162,7 +162,7 @@ jobs:
           output: ${{ inputs.environment == 'prod' && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
 
       - name: Upload Trivy Scan Results to S3
-        if: ${{ inputs.environment == 'dev' }}
+        if: ${{ inputs.environment == 'dev' && inputs.trivy-scan }}
         env:
           TRIVY_RESULT: ${{ inputs.environment == 'prod' && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
           S3_BUCKET: firefly-${{ inputs.environment == 'prod' && inputs.environment || inputs.cluster }}-trivy-scans
