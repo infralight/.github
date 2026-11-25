@@ -400,6 +400,7 @@ jobs:
             Image tag: ${{ steps.vars.outputs.image-tag }}
             Findings (fixable only): ${{ steps.trivy-count.outputs.critical }} CRITICAL, ${{ steps.trivy-count.outputs.high }} HIGH
             Run: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
+            Report: s3://firefly-${{ inputs.cluster }}-trivy-scans/${{ inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
           MSG_MINIMAL: true
           SLACK_USERNAME: trivyBot
           SLACK_FOOTER: "Firefly's Trivy image scan"
