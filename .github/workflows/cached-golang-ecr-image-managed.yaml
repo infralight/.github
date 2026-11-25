@@ -67,6 +67,10 @@ on:
         type: boolean
         required: false
         default: false
+      trivy-block:
+        type: boolean
+        required: false
+        default: false
       gitleaks:
         type: boolean
         required: false
@@ -368,7 +372,7 @@ jobs:
 
       - name: Count Trivy Findings
         id: trivy-count
-        if: ${{ inputs.environment == 'dev' && inputs.trivy-scan && inputs.trivy-slack-notify }}
+        if: ${{ inputs.environment == 'dev' && inputs.trivy-scan && (inputs.trivy-slack-notify || inputs.trivy-block) }}
         env:
           TRIVY_RESULT: ${{ inputs.environment == 'prod' && inputs.environment || inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
         run: |
@@ -386,23 +390,27 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Notify Slack of Trivy Findings
-        if: ${{ steps.trivy-count.outputs.total > 0 }}
+        if: ${{ inputs.trivy-slack-notify && steps.trivy-count.outputs.total > 0 }}
         uses: rtCamp/action-slack-notify@cdf0a2130cbcdfd82ba5fcac8e076370bf381b36 # v2
         env:
-          SLACK_COLOR: ${{ steps.trivy-count.outputs.critical > 0 && 'danger' || 'warning' }}
-          SLACK_TITLE: "[${{ inputs.environment }}] Trivy: ${{ steps.trivy-count.outputs.critical }} CRITICAL / ${{ steps.trivy-count.outputs.high }} HIGH in ${{ inputs.app-name }}"
+          SLACK_COLOR: ${{ (inputs.trivy-block || steps.trivy-count.outputs.critical > 0) && 'danger' || 'warning' }}
+          SLACK_TITLE: "Build Status: ${{ inputs.trivy-block && 'BLOCKED' || 'PASS' }}"
           SLACK_MESSAGE: |
-            *Environment:* ${{ inputs.environment }} (${{ inputs.cluster }})
-            *Repository:* ${{ github.repository }}
-            *App:* ${{ inputs.app-name }}
-            *Image tag:* ${{ steps.vars.outputs.image-tag }}
-            *Findings (fixable only):* ${{ steps.trivy-count.outputs.critical }} CRITICAL, ${{ steps.trivy-count.outputs.high }} HIGH
-            *Workflow run:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            *Report:* s3://firefly-${{ inputs.cluster }}-trivy-scans/${{ inputs.cluster }}-trivy-${{ inputs.app-name }}-results.json
+            App: ${{ inputs.app-name }}
+            Image tag: ${{ steps.vars.outputs.image-tag }}
+            Findings (fixable only): ${{ steps.trivy-count.outputs.critical }} CRITICAL, ${{ steps.trivy-count.outputs.high }} HIGH
+            Run: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
+          MSG_MINIMAL: true
           SLACK_USERNAME: trivyBot
           SLACK_FOOTER: "Firefly's Trivy image scan"
           SLACK_WEBHOOK: ${{ secrets.CI_TRIVY_SLACK }}
         continue-on-error: true
+
+      - name: Block on Trivy Findings
+        if: ${{ inputs.trivy-block && steps.trivy-count.outputs.total > 0 }}
+        run: |
+          echo "::error::Trivy found ${{ steps.trivy-count.outputs.critical }} CRITICAL / ${{ steps.trivy-count.outputs.high }} HIGH fixable findings in ${{ inputs.app-name }}; the image was not pushed"
+          exit 1
 
       - name: Docker Build for Trivy Gate (Multi-Arch Prod)
         if: ${{ inputs.trivy-scan && inputs.trivy-gate-prod && contains(fromJSON('["prod", "prod-eu"]'), inputs.environment) && env.IS_MULTI_ARCH_PROD == 'true' && env.HAVE_RUN_CMD == 'false' }}
