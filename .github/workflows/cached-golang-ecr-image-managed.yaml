@@ -406,7 +406,6 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.CI_TRIVY_SLACK }}
         continue-on-error: true
 
-      # Images marked clean (trivy-block) must stay CVE-free: fail before the ECR push on any fixable CRITICAL/HIGH finding
       - name: Block on Trivy Findings
         if: ${{ inputs.trivy-block && steps.trivy-count.outputs.total > 0 }}
         run: |
